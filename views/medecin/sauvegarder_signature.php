@@ -48,6 +48,7 @@ try {
     // Créer le dossier signatures s'il n'existe pas
     $signatures_dir = __DIR__ . '/../../uploads/signatures';
     if (!file_exists($signatures_dir)) {
+        error_log('Création du dossier signatures: ' . $signatures_dir);
         if (!mkdir($signatures_dir, 0777, true)) {
             error_log('Impossible de créer le dossier signatures: ' . $signatures_dir);
             sendJsonResponse(false, 'Erreur lors de la création du dossier de signatures');
@@ -57,12 +58,14 @@ try {
     // Vérifier les permissions du dossier
     if (!is_writable($signatures_dir)) {
         error_log('Le dossier signatures n\'est pas accessible en écriture: ' . $signatures_dir);
+        error_log('Permissions actuelles: ' . substr(sprintf('%o', fileperms($signatures_dir)), -4));
         sendJsonResponse(false, 'Le dossier de signatures n\'est pas accessible en écriture');
     }
 
     // Générer un nom de fichier unique
     $filename = 'signature_' . $ordonnance_id . '_' . time() . '.png';
     $filepath = $signatures_dir . '/' . $filename;
+    error_log('Tentative de sauvegarde de la signature dans: ' . $filepath);
 
     // Convertir et sauvegarder l'image
     $signature_data = str_replace('data:image/png;base64,', '', $signature_data);
@@ -75,17 +78,22 @@ try {
     
     if (file_put_contents($filepath, $signature_data) === false) {
         error_log('Erreur lors de l\'écriture du fichier: ' . $filepath);
+        error_log('Permissions du dossier: ' . substr(sprintf('%o', fileperms($signatures_dir)), -4));
         sendJsonResponse(false, 'Erreur lors de la sauvegarde de la signature');
     }
+
+    error_log('Signature sauvegardée avec succès dans: ' . $filepath);
 
     // Mettre à jour la base de données avec le chemin de la signature
     $relative_path = 'uploads/signatures/' . $filename;
     $stmt = db()->prepare('UPDATE ordonnance SET signature = ? WHERE id = ?');
     if (!$stmt->execute([$relative_path, $ordonnance_id])) {
         error_log('Erreur lors de la mise à jour de la base de données');
+        error_log('Requête SQL: UPDATE ordonnance SET signature = ' . $relative_path . ' WHERE id = ' . $ordonnance_id);
         sendJsonResponse(false, 'Erreur lors de la mise à jour de la base de données');
     }
     
+    error_log('Base de données mise à jour avec succès pour l\'ordonnance ID: ' . $ordonnance_id);
     sendJsonResponse(true, 'Signature sauvegardée avec succès', ['path' => $relative_path]);
 
 } catch (PDOException $e) {

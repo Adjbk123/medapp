@@ -322,9 +322,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </div>
 
-    <!-- Bouton de chat flottant -->
-    <button class="fixed bottom-4 right-4 bg-[#3b82f6] hover:bg-[#2563eb] text-white rounded-full w-14 h-14 text-2xl shadow-lg transition-colors duration-300 flex items-center justify-center">
-        <i class="fas fa-comments"></i>
-    </button>
+
 </body>
 </html>

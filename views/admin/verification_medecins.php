@@ -1,5 +1,6 @@
 <?php
 require_once '../../includes/session.php';
+require_once '../../includes/security.php';
 requireRole('admin');
 require_once '../config/database.php';
 require_once '../models/ProfilMedecin.php';
@@ -38,156 +39,193 @@ $medecins = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vérification des Médecins - MedApp</title>
+    <title>Vérification des Médecins | MedApp</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../../assets/css/admin.css">
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100">
-    <div class="min-h-screen">
-        <!-- En-tête -->
-        <header class="bg-white shadow">
-            <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                <h1 class="text-3xl font-bold text-gray-900">Vérification des Médecins</h1>
+<body>
+    <div class="admin-container">
+        <!-- Sidebar -->
+        <div class="admin-sidebar">
+            <div class="admin-sidebar-header">
+                <a href="dashboard.php" class="admin-sidebar-logo">
+                    <i class="fas fa-heartbeat"></i>
+                    <span>MedApp Admin</span>
+                </a>
+                <button class="admin-sidebar-toggle">
+                    <i class="fas fa-bars"></i>
+                </button>
             </div>
-        </header>
-
-        <!-- Message de succès -->
-        <?php if (isset($_GET['success'])): ?>
-        <div class="max-w-7xl mx-auto mt-4 px-4 sm:px-6 lg:px-8">
-            <div class="bg-green-50 border-l-4 border-green-400 p-4">
-                <div class="flex">
-                    <div class="flex-shrink-0">
-                        <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                        </svg>
+            <div class="admin-sidebar-nav">
+                <a href="dashboard.php" class="admin-sidebar-nav-item">
+                    <i class="fas fa-home"></i>
+                    <span>Tableau de bord</span>
+                </a>
+                <a href="doctors.php" class="admin-sidebar-nav-item">
+                    <i class="fas fa-user-md"></i>
+                    <span>Médecins</span>
+                </a>
+                <a href="patients.php" class="admin-sidebar-nav-item">
+                    <i class="fas fa-procedures"></i>
+                    <span>Patients</span>
+                </a>
+                <a href="verify_doctors.php" class="admin-sidebar-nav-item active">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Vérification</span>
+                </a>
+                <a href="settings.php" class="admin-sidebar-nav-item">
+                    <i class="fas fa-cog"></i>
+                    <span>Paramètres</span>
+                </a>
+            </div>
+            <div class="admin-sidebar-footer">
+                <div class="admin-sidebar-user">
+                    <div class="admin-sidebar-user-avatar">
+                        <i class="fas fa-user"></i>
                     </div>
-                    <div class="ml-3">
-                        <p class="text-sm text-green-700">
-                            L'action a été effectuée avec succès.
-                        </p>
+                    <div class="admin-sidebar-user-info">
+                        <div class="admin-sidebar-user-name"><?php echo isset($_SESSION['nom']) && isset($_SESSION['prenom']) ? htmlspecialchars($_SESSION['prenom'] . ' ' . $_SESSION['nom']) : 'Admin'; ?></div>
+                        <div class="admin-sidebar-user-role">Administrateur</div>
+                    </div>
+                </div>
+                <a href="../logout.php" class="admin-sidebar-nav-item">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Déconnexion</span>
+                </a>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="admin-main">
+            <!-- Top Bar -->
+            <div class="admin-header">
+                <h1 class="admin-header-title">Vérification des Médecins</h1>
+                <div class="admin-header-actions">
+                    <div class="admin-flex admin-items-center admin-gap-4">
+                        <label class="admin-flex admin-items-center admin-gap-2">
+                            <input type="checkbox" id="dark-mode-toggle" class="admin-form-control" style="width: auto;">
+                            <span>Mode sombre</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Message de succès -->
+            <?php if (isset($_GET['success'])): ?>
+            <div class="admin-content">
+                <div class="admin-alert admin-alert-success">
+                    <i class="fas fa-check-circle"></i>
+                    <span>L'action a été effectuée avec succès.</span>
+                    <button class="admin-alert-close admin-ml-auto"><i class="fas fa-times"></i></button>
+                </div>
+            <?php endif; ?>
+
+            <!-- Liste des médecins -->
+            <div class="admin-content<?php echo !isset($_GET['success']) ? '' : ' admin-mt-0'; ?>">
+                <div class="admin-card">
+                    <div class="admin-card-header">
+                        <h2 class="admin-card-title">Médecins en attente de vérification</h2>
+                        <p class="admin-card-subtitle">Vérifiez les informations et les diplômes des médecins</p>
+                    </div>
+                    <div class="admin-card-body">
+                        <div class="admin-table-responsive">
+                            <table class="admin-table">
+                                <thead>
+                                    <tr>
+                                        <th>Médecin</th>
+                                        <th>Spécialité</th>
+                                        <th>Expérience</th>
+                                        <th>Hôpital</th>
+                                        <th>Diplôme</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                <?php foreach ($medecins as $medecin): ?>
+                                    <tr>
+                                        <td>
+                                            <div class="admin-flex admin-items-center admin-gap-3">
+                                                <div class="admin-avatar admin-avatar-sm">
+                                                    <i class="fas fa-user-md"></i>
+                                                </div>
+                                                <div>
+                                                    <div class="admin-font-semibold"><?php echo htmlspecialchars($medecin['nom'] . ' ' . $medecin['prenom']); ?></div>
+                                                    <div class="admin-text-sm admin-text-muted"><?php echo htmlspecialchars($medecin['email']); ?></div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td><?php echo htmlspecialchars($medecin['specialite'] ?? 'Non spécifiée'); ?></td>
+                                        <td><?php echo htmlspecialchars($medecin['annees_experience'] ?? 'Non spécifiée'); ?> ans</td>
+                                        <td><?php echo htmlspecialchars($medecin['hopital_actuel'] ?? 'Non spécifié'); ?></td>
+                                        <td>
+                                            <?php if (isset($medecin['diplome'])): ?>
+                                                <a href="../uploads/diplomes/<?php echo htmlspecialchars($medecin['diplome']); ?>" target="_blank" class="admin-btn admin-btn-sm admin-btn-outline">
+                                                    <i class="fas fa-file-pdf"></i>
+                                                    <span>Voir</span>
+                                                </a>
+                                            <?php else: ?>
+                                                <span class="admin-badge admin-badge-danger">Non fourni</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <div class="admin-flex admin-gap-2">
+                                                <button onclick="showVerificationModal(<?php echo $medecin['id']; ?>, 'verify')" class="admin-btn admin-btn-sm admin-btn-success">
+                                                    <i class="fas fa-check"></i>
+                                                    <span>Vérifier</span>
+                                                </button>
+                                                <button onclick="showVerificationModal(<?php echo $medecin['id']; ?>, 'reject')" class="admin-btn admin-btn-sm admin-btn-danger">
+                                                    <i class="fas fa-times"></i>
+                                                    <span>Rejeter</span>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-        <?php endif; ?>
-
-        <!-- Liste des médecins -->
-        <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-            <div class="px-4 py-6 sm:px-0">
-                <div class="bg-white shadow overflow-hidden sm:rounded-lg">
-                    <div class="px-4 py-5 sm:px-6">
-                        <h3 class="text-lg leading-6 font-medium text-gray-900">Médecins en attente de vérification</h3>
-                        <p class="mt-1 max-w-2xl text-sm text-gray-500">Vérifiez les informations et les diplômes des médecins.</p>
-                    </div>
-                    <div class="border-t border-gray-200">
-                        <div class="bg-white shadow overflow-hidden sm:rounded-md">
-                            <ul class="divide-y divide-gray-200">
-                                <?php foreach ($medecins as $medecin): ?>
-                                <li>
-                                    <div class="px-4 py-4 sm:px-6">
-                                        <div class="flex items-center justify-between">
-                                            <div class="flex items-center">
-                                                <div class="flex-shrink-0">
-                                                    <svg class="h-6 w-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                                                    </svg>
-                                                </div>
-                                                <div class="ml-4">
-                                                    <h4 class="text-lg font-medium text-gray-900"><?php echo htmlspecialchars($medecin['nom'] . ' ' . $medecin['prenom']); ?></h4>
-                                                    <p class="text-sm text-gray-500"><?php echo htmlspecialchars($medecin['email']); ?></p>
-                                                </div>
-                                            </div>
-                                            <div class="flex space-x-2">
-                                                <button onclick="showVerificationModal(<?php echo $medecin['id']; ?>, 'verify')" class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                                                    Vérifier
-                                                </button>
-                                                <button onclick="showVerificationModal(<?php echo $medecin['id']; ?>, 'reject')" class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-                                                    Rejeter
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <div class="mt-4">
-                                            <dl class="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
-                                                <div class="sm:col-span-1">
-                                                    <dt class="text-sm font-medium text-gray-500">Spécialité</dt>
-                                                    <dd class="mt-1 text-sm text-gray-900"><?php echo htmlspecialchars($medecin['specialite'] ?? 'Non spécifiée'); ?></dd>
-                                                </div>
-                                                <div class="sm:col-span-1">
-                                                    <dt class="text-sm font-medium text-gray-500">Années d'expérience</dt>
-                                                    <dd class="mt-1 text-sm text-gray-900"><?php echo htmlspecialchars($medecin['annees_experience'] ?? 'Non spécifiée'); ?></dd>
-                                                </div>
-                                                <div class="sm:col-span-1">
-                                                    <dt class="text-sm font-medium text-gray-500">Hôpital actuel</dt>
-                                                    <dd class="mt-1 text-sm text-gray-900"><?php echo htmlspecialchars($medecin['hopital_actuel'] ?? 'Non spécifié'); ?></dd>
-                                                </div>
-                                                <div class="sm:col-span-1">
-                                                    <dt class="text-sm font-medium text-gray-500">Adresse du cabinet</dt>
-                                                    <dd class="mt-1 text-sm text-gray-900"><?php echo htmlspecialchars($medecin['adresse_cabinet'] ?? 'Non spécifiée'); ?></dd>
-                                                </div>
-                                                <div class="sm:col-span-2">
-                                                    <dt class="text-sm font-medium text-gray-500">Horaires de travail</dt>
-                                                    <dd class="mt-1 text-sm text-gray-900"><?php echo htmlspecialchars($medecin['horaires_travail'] ?? 'Non spécifiés'); ?></dd>
-                                                </div>
-                                                <div class="sm:col-span-2">
-                                                    <dt class="text-sm font-medium text-gray-500">Diplôme</dt>
-                                                    <dd class="mt-1 text-sm text-gray-900">
-                                                        <?php if (isset($medecin['diplome'])): ?>
-                                                        <a href="../uploads/diplomes/<?php echo htmlspecialchars($medecin['diplome']); ?>" target="_blank" class="text-indigo-600 hover:text-indigo-900">
-                                                            Voir le diplôme
-                                                        </a>
-                                                        <?php else: ?>
-                                                        Non fourni
-                                                        <?php endif; ?>
-                                                    </dd>
-                                                </div>
-                                            </dl>
-                                        </div>
-                                    </div>
-                                </li>
-                                <?php endforeach; ?>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </main>
     </div>
 
     <!-- Modal de vérification -->
-    <div id="verificationModal" class="fixed z-10 inset-0 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
-            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
-                <form id="verificationForm" method="POST">
-                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
-                    <input type="hidden" name="id_medecin" id="medecinId">
-                    <input type="hidden" name="action" id="actionType">
-                    <div>
-                        <div class="mt-3 text-center sm:mt-5">
-                            <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                                Confirmation de vérification
-                            </h3>
-                            <div class="mt-2">
-                                <p class="text-sm text-gray-500" id="modalDescription">
-                                    Êtes-vous sûr de vouloir <span id="actionText"></span> ce médecin ?
-                                </p>
-                            </div>
-                            <div class="mt-4">
-                                <label for="commentaire" class="block text-sm font-medium text-gray-700">Commentaire (optionnel)</label>
-                                <textarea name="commentaire" id="commentaire" rows="3" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"></textarea>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
-                        <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:col-start-2 sm:text-sm">
-                            Confirmer
-                        </button>
-                        <button type="button" onclick="hideVerificationModal()" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:col-start-1 sm:text-sm">
-                            Annuler
-                        </button>
-                    </div>
-                </form>
+    <div id="verificationModal" class="admin-modal" style="display: none;">
+        <div class="admin-modal-overlay"></div>
+        <div class="admin-modal-container">
+            <div class="admin-modal-header">
+                <h3 class="admin-modal-title" id="modal-title">Confirmation de vérification</h3>
+                <button type="button" onclick="hideVerificationModal()" class="admin-modal-close">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
+            <form id="verificationForm" method="POST">
+                <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
+                <input type="hidden" name="id_medecin" id="medecinId">
+                <input type="hidden" name="action" id="actionType">
+                <div class="admin-modal-body">
+                    <p class="admin-mb-4" id="modalDescription">
+                        Êtes-vous sûr de vouloir <span id="actionText" class="admin-font-semibold"></span> ce médecin ?
+                    </p>
+                    <div class="admin-form-group">
+                        <label for="commentaire" class="admin-form-label">Commentaire (optionnel)</label>
+                        <textarea name="commentaire" id="commentaire" rows="3" class="admin-form-control"></textarea>
+                    </div>
+                </div>
+                <div class="admin-modal-footer">
+                    <button type="button" onclick="hideVerificationModal()" class="admin-btn admin-btn-outline">
+                        <i class="fas fa-times"></i>
+                        <span>Annuler</span>
+                    </button>
+                    <button type="submit" class="admin-btn admin-btn-primary" id="confirmButton">
+                        <i class="fas fa-check"></i>
+                        <span>Confirmer</span>
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -196,12 +234,50 @@ $medecins = $stmt->fetchAll(PDO::FETCH_ASSOC);
             document.getElementById('medecinId').value = medecinId;
             document.getElementById('actionType').value = action;
             document.getElementById('actionText').textContent = action === 'verify' ? 'vérifier' : 'rejeter';
-            document.getElementById('verificationModal').classList.remove('hidden');
+            
+            // Changer la couleur du bouton de confirmation selon l'action
+            const confirmButton = document.getElementById('confirmButton');
+            if (action === 'verify') {
+                confirmButton.className = 'admin-btn admin-btn-success';
+                confirmButton.innerHTML = '<i class="fas fa-check"></i><span>Confirmer</span>';
+            } else {
+                confirmButton.className = 'admin-btn admin-btn-danger';
+                confirmButton.innerHTML = '<i class="fas fa-times"></i><span>Confirmer</span>';
+            }
+            
+            document.getElementById('verificationModal').style.display = 'block';
         }
 
         function hideVerificationModal() {
-            document.getElementById('verificationModal').classList.add('hidden');
+            document.getElementById('verificationModal').style.display = 'none';
         }
+        
+        // Fermer les alertes
+        document.addEventListener('DOMContentLoaded', function() {
+            const closeButtons = document.querySelectorAll('.admin-alert-close');
+            closeButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    this.closest('.admin-alert').style.display = 'none';
+                });
+            });
+            
+            // Activer le mode sombre
+            const darkModeToggle = document.getElementById('dark-mode-toggle');
+            if (darkModeToggle) {
+                darkModeToggle.addEventListener('change', function() {
+                    document.body.classList.toggle('admin-dark-mode', this.checked);
+                    localStorage.setItem('admin-dark-mode', this.checked ? 'enabled' : 'disabled');
+                });
+                
+                // Vérifier le mode sombre enregistré
+                const darkModeStatus = localStorage.getItem('admin-dark-mode');
+                if (darkModeStatus === 'enabled') {
+                    darkModeToggle.checked = true;
+                    document.body.classList.add('admin-dark-mode');
+                }
+            }
+        });
     </script>
+    <script src="../../assets/js/admin.js"></script>
 </body>
-</html> 
+</html>

@@ -1,24 +1,31 @@
 <?php
-require_once '../includes/session.php';
-require_once '../config/database.php';
+// Désactiver l'affichage des erreurs pour éviter que du HTML soit renvoyé au lieu du JSON
+error_reporting(0);
+ini_set('display_errors', 0);
 
-// Vérification de la session
-if (!isset($_SESSION['user_id'])) {
-    http_response_code(401);
-    echo json_encode(['error' => 'Non autorisé']);
-    exit;
-}
-
-// Vérification des paramètres
-if (!isset($_GET['user_id'])) {
-    http_response_code(400);
-    echo json_encode(['error' => 'ID utilisateur manquant']);
-    exit;
-}
-
-$db = (new Database())->getConnection();
+// S'assurer que la réponse sera toujours en JSON
+header('Content-Type: application/json');
 
 try {
+    require_once '../includes/session.php';
+    require_once '../config/database.php';
+
+    // Vérification de la session
+    if (!isset($_SESSION['user_id'])) {
+        http_response_code(401);
+        echo json_encode(['success' => false, 'error' => 'Non autorisé']);
+        exit;
+    }
+
+    // Vérification des paramètres
+    if (!isset($_GET['user_id'])) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => 'ID utilisateur manquant']);
+        exit;
+    }
+
+    $db = (new Database())->getConnection();
+
     // Détermination du type d'expéditeur (patient ou médecin)
     $receiver_id = $_SESSION['user_id'];
     $sender_type = isset($_SESSION['role']) && $_SESSION['role'] === 'medecin' ? 'medecin' : 'patient';
@@ -43,11 +50,14 @@ try {
     $result = $stmt->fetch(PDO::FETCH_ASSOC);
     
     echo json_encode([
+        'success' => true,
         'is_typing' => $result && $result['is_typing'] == 1
     ]);
 
 } catch (PDOException $e) {
-    error_log("Erreur dans check_typing.php: " . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['error' => 'Erreur serveur']);
-} 
+    echo json_encode(['success' => false, 'error' => 'Erreur serveur: ' . $e->getMessage()]);
+} catch (Exception $e) {
+    http_response_code(500);
+    echo json_encode(['success' => false, 'error' => 'Erreur serveur: ' . $e->getMessage()]);
+}

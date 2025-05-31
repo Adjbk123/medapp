@@ -148,3 +148,10 @@ $userRole = $_SESSION['role'] ?? '';
     });
 </script>
 
+<?php
+// Inclure le chatbot d'analyse médicale uniquement pour les patients
+if ($isLoggedIn && $userRole === 'patient') {
+    include_once __DIR__ . '/include_chatbot_analyzer.php';
+}
+?>
+

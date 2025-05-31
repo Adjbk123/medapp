@@ -50,28 +50,64 @@ $stmt->execute([$patient_id]);
 $consultations = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Récupérer les derniers rendez-vous
-$stmt = db()->prepare("
-    SELECT r.*, m.nom as medecin_nom, m.prenom as medecin_prenom
-    FROM rendez_vous r
-    JOIN medecin m ON r.id_medecin = m.id
-    WHERE r.id_patient = ?
-    ORDER BY r.date_rdv DESC, r.heure_rdv DESC
-    LIMIT 5
-");
-$stmt->execute([$patient_id]);
-$rendezvous = $stmt->fetchAll(PDO::FETCH_ASSOC);
+try {
+    // Vérifier si la table rendez_vous existe
+    $tableExists = false;
+    $checkTable = db()->query("SHOW TABLES LIKE 'rendez_vous'");
+    if ($checkTable && $checkTable->rowCount() > 0) {
+        $tableExists = true;
+    }
+    
+    if ($tableExists) {
+        $stmt = db()->prepare("
+            SELECT r.*, m.nom as medecin_nom, m.prenom as medecin_prenom
+            FROM rendez_vous r
+            JOIN medecin m ON r.id_medecin = m.id
+            WHERE r.id_patient = ?
+            ORDER BY r.date_rdv DESC, r.heure_rdv DESC
+            LIMIT 5
+        ");
+        $stmt->execute([$patient_id]);
+        $rendezvous = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } else {
+        // Si la table n'existe pas, initialiser un tableau vide
+        $rendezvous = [];
+    }
+} catch (PDOException $e) {
+    // En cas d'erreur, initialiser un tableau vide
+    error_log("Erreur lors de la récupération des rendez-vous : " . $e->getMessage());
+    $rendezvous = [];
+}
 
 // Récupérer les dernières ordonnances
-$stmt = db()->prepare("
-    SELECT o.*, m.nom as medecin_nom, m.prenom as medecin_prenom
-    FROM ordonnance o
-    JOIN medecin m ON o.idmedecin = m.id
-    WHERE o.idpatient = ?
-    ORDER BY o.date_creation DESC
-    LIMIT 5
-");
-$stmt->execute([$patient_id]);
-$ordonnances = $stmt->fetchAll(PDO::FETCH_ASSOC);
+try {
+    // Vérifier si la table ordonnance existe
+    $tableExists = false;
+    $checkTable = db()->query("SHOW TABLES LIKE 'ordonnance'");
+    if ($checkTable && $checkTable->rowCount() > 0) {
+        $tableExists = true;
+    }
+    
+    if ($tableExists) {
+        $stmt = db()->prepare("
+            SELECT o.*, m.nom as medecin_nom, m.prenom as medecin_prenom
+            FROM ordonnance o
+            JOIN medecin m ON o.idmedecin = m.id
+            WHERE o.idpatient = ?
+            ORDER BY o.date_creation DESC
+            LIMIT 5
+        ");
+        $stmt->execute([$patient_id]);
+        $ordonnances = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } else {
+        // Si la table n'existe pas, initialiser un tableau vide
+        $ordonnances = [];
+    }
+} catch (PDOException $e) {
+    // En cas d'erreur, initialiser un tableau vide
+    error_log("Erreur lors de la récupération des ordonnances : " . $e->getMessage());
+    $ordonnances = [];
+}
 ?>
 
 <!DOCTYPE html>
@@ -87,7 +123,7 @@ $ordonnances = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <body class="bg-gradient-to-br from-[#F1F8E9] to-[#E8F5E9] min-h-screen">
     <div class="min-h-screen flex">
         <!-- Barre latérale -->
-        <?php include_once 'components/sidebar.php'; ?>
+        <?php include_once '../../views/components/sidebar.php'; ?>
 
         <!-- Contenu principal -->
         <div class="flex-1">

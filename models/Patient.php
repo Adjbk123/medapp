@@ -235,4 +235,47 @@ class Patient extends User {
         
         return false;
     }
+    
+    // Méthode pour supprimer un patient
+    public function delete() {
+        try {
+            // Démarrer une transaction
+            $this->db->beginTransaction();
+            
+            // 1. Supprimer d'abord les enregistrements de profilpatient liés aux carnets de santé du patient
+            $query = "DELETE pp FROM profilpatient pp 
+                     INNER JOIN carnetsante cs ON pp.idcarnetsante = cs.id 
+                     WHERE cs.id_patient = ?";
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(1, $this->id);
+            $stmt->execute();
+            
+            // 2. Supprimer ensuite les carnets de santé du patient
+            $query = "DELETE FROM carnetsante WHERE id_patient = ?";
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(1, $this->id);
+            $stmt->execute();
+            
+            // 3. Supprimer les rendez-vous du patient
+            $query = "DELETE FROM rendezvous WHERE idpatient = ?";
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(1, $this->id);
+            $stmt->execute();
+            
+            // 4. Enfin, supprimer le patient
+            $query = "DELETE FROM " . $this->table_name . " WHERE id = ?";
+            $stmt = $this->db->prepare($query);
+            $stmt->bindParam(1, $this->id);
+            $stmt->execute();
+            
+            // Valider la transaction
+            $this->db->commit();
+            return true;
+            
+        } catch (PDOException $e) {
+            // En cas d'erreur, annuler la transaction
+            $this->db->rollBack();
+            throw $e;
+        }
+    }
 } 

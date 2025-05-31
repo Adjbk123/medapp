@@ -638,5 +638,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         // Vérifier les mises à jour au chargement de la page
         document.addEventListener('DOMContentLoaded', checkStatusUpdates);
     </script>
+    
+    <?php
+    // Inclusion du chatbot d'analyse médicale
+    include_once __DIR__ . '/../components/include_chatbot_analyzer.php';
+    ?>
 </body>
 </html>

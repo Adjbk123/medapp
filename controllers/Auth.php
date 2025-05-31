@@ -49,6 +49,14 @@ class Auth {
             // Vérifier si le compte est vérifié
             if($row['verification_status'] !== 'verified') {
                 $writeLog("Compte non vérifié - Type: " . $row['type']);
+                
+                // Définir un message d'erreur spécifique selon le type de compte
+                if($row['type'] === 'medecin') {
+                    $_SESSION['login_error'] = "Votre compte médecin est en attente de vérification par l'administrateur. Vous pourrez vous connecter dès que votre compte aura été validé.";
+                } else {
+                    $_SESSION['login_error'] = "Votre compte n'est pas encore vérifié. Veuillez vérifier votre email et cliquer sur le lien de confirmation.";
+                }
+                
                 return false;
             }
             
@@ -165,32 +173,55 @@ class Auth {
     
     // Méthode pour envoyer un email de réinitialisation
     private function sendResetEmail($email, $token) {
-        $to = $email;
-        $subject = "Réinitialisation de mot de passe - MedConnect";
-        
-        $message = "
-        <html>
-        <head>
-        <title>Réinitialisation de mot de passe</title>
-        </head>
-        <body>
-        <h2>Bonjour,</h2>
-        <p>Vous avez demandé la réinitialisation de votre mot de passe. Veuillez cliquer sur le lien ci-dessous pour définir un nouveau mot de passe:</p>
-        <p><a href='http://localhost/medapp/views/reset_password.php?token=$token'>Réinitialiser mon mot de passe</a></p>
-        <p>Ce lien expirera dans 1 heure.</p>
-        <p>Si vous n'avez pas demandé la réinitialisation de votre mot de passe, veuillez ignorer cet email.</p>
-        <p>Cordialement,<br>L'équipe MedConnect</p>
-        </body>
-        </html>
-        ";
-        
-        // Pour envoyer un e-mail HTML, l'en-tête Content-type doit être défini
-        $headers = "MIME-Version: 1.0" . "\r\n";
-        $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
-        $headers .= 'From: noreply@medconnect.com' . "\r\n";
-        
-        // Envoyer l'e-mail
-        mail($to, $subject, $message, $headers);
+        try {
+            // Inclure la classe Mailer
+            require_once __DIR__ . '/../send_mail.php';
+            
+            // Créer une instance de Mailer
+            $mailer = new Mailer();
+            
+            $subject = "Réinitialisation de mot de passe - MedConnect";
+            
+            $body = "
+            <html>
+            <head>
+            <title>Réinitialisation de mot de passe</title>
+            </head>
+            <body>
+            <h2>Bonjour,</h2>
+            <p>Vous avez demandé la réinitialisation de votre mot de passe. Veuillez cliquer sur le lien ci-dessous pour définir un nouveau mot de passe:</p>
+            <p><a href='http://localhost/medapp/views/reset_password.php?token=$token'>Réinitialiser mon mot de passe</a></p>
+            <p>Ce lien expirera dans 1 heure.</p>
+            <p>Si vous n'avez pas demandé la réinitialisation de votre mot de passe, veuillez ignorer cet email.</p>
+            <p>Cordialement,<br>L'équipe MedConnect</p>
+            </body>
+            </html>
+            ";
+            
+            // Envoyer l'email avec la classe Mailer
+            // Utiliser la méthode sendCustomEmail car nous n'avons pas le nom de l'utilisateur
+            $mailer->sendCustomEmail($email, 'Utilisateur', $subject, $body);
+            
+            // Enregistrer dans le journal
+            $log_file = __DIR__ . '/../logs/email.log';
+            $timestamp = date('Y-m-d H:i:s');
+            file_put_contents($log_file, "[$timestamp] Email de réinitialisation envoyé à : $email\n", FILE_APPEND);
+            
+            return true;
+        } catch (Exception $e) {
+            // Enregistrer l'erreur dans le journal
+            $log_file = __DIR__ . '/../logs/email_error.log';
+            $timestamp = date('Y-m-d H:i:s');
+            file_put_contents($log_file, "[$timestamp] Erreur d'envoi d'email : " . $e->getMessage() . "\n", FILE_APPEND);
+            
+            // En mode développement, afficher l'erreur dans le navigateur
+            if (env('APP_ENV') === 'development') {
+                echo "<div style='color: red; padding: 10px; border: 1px solid red;'>Erreur d'envoi d'email : " . $e->getMessage() . "</div>";
+            }
+            
+            // Continuer comme si l'email avait été envoyé pour ne pas révéler d'informations sensibles
+            return true;
+        }
     }
     
     // Méthode pour réinitialiser le mot de passe

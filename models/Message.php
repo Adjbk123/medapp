@@ -5,6 +5,7 @@ class Message {
 
     public $id;
     public $contenu;
+    public $image_url;
     public $date_envoi;
     public $sender_id;
     public $receiver_id;
@@ -18,9 +19,9 @@ class Message {
     // Envoyer un message
     public function envoyer() {
         $query = "INSERT INTO " . $this->table_name . "
-                (contenu, sender_id, receiver_id, sender_type)
+                (contenu, image_url, sender_id, receiver_id, sender_type)
                 VALUES
-                (:contenu, :sender_id, :receiver_id, :sender_type)";
+                (:contenu, :image_url, :sender_id, :receiver_id, :sender_type)";
 
         $stmt = $this->db->prepare($query);
 
@@ -29,9 +30,11 @@ class Message {
         $this->sender_id = htmlspecialchars(strip_tags($this->sender_id));
         $this->receiver_id = htmlspecialchars(strip_tags($this->receiver_id));
         $this->sender_type = htmlspecialchars(strip_tags($this->sender_type));
+        // L'URL de l'image n'a pas besoin d'être échappée car elle est générée par le système
 
         // Lier les valeurs
         $stmt->bindParam(":contenu", $this->contenu);
+        $stmt->bindParam(":image_url", $this->image_url);
         $stmt->bindParam(":sender_id", $this->sender_id);
         $stmt->bindParam(":receiver_id", $this->receiver_id);
         $stmt->bindParam(":sender_type", $this->sender_type);

@@ -187,5 +187,10 @@ $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </main>
         </div>
     </div>
+    
+    <?php
+    // Inclusion du chatbot d'analyse médicale
+    include_once __DIR__ . '/../components/include_chatbot_analyzer.php';
+    ?>
 </body>
-</html> 
+</html>

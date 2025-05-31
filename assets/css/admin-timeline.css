@@ -1,0 +1,98 @@
+/* Styles pour la timeline d'historique */
+.admin-timeline {
+    position: relative;
+    padding-left: 2rem;
+    margin-top: 1rem;
+}
+
+.admin-timeline::before {
+    content: '';
+    position: absolute;
+    left: 0.75rem;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: #e2e8f0;
+}
+
+.admin-timeline-item {
+    position: relative;
+    padding-bottom: 1.5rem;
+}
+
+.admin-timeline-item:last-child {
+    padding-bottom: 0;
+}
+
+.admin-timeline-marker {
+    position: absolute;
+    left: -2rem;
+    top: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.admin-timeline-marker-icon {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background-color: #4299e1;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+}
+
+.admin-timeline-content {
+    background-color: #f8fafc;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.admin-timeline-time {
+    font-size: 0.875rem;
+    color: #718096;
+    margin-bottom: 0.5rem;
+}
+
+.admin-timeline-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 0.5rem;
+}
+
+.admin-timeline-description {
+    font-size: 0.875rem;
+    color: #4a5568;
+    margin-bottom: 0.5rem;
+}
+
+.admin-timeline-meta {
+    font-size: 0.75rem;
+    color: #718096;
+}
+
+/* Couleurs pour les différents types d'actions */
+.admin-bg-green-500 {
+    background-color: #48bb78;
+}
+
+.admin-bg-red-500 {
+    background-color: #f56565;
+}
+
+.admin-bg-blue-500 {
+    background-color: #4299e1;
+}
+
+.admin-bg-purple-500 {
+    background-color: #9f7aea;
+}
+
+.admin-bg-yellow-500 {
+    background-color: #ecc94b;
+}

@@ -30,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         // Valider que le statut est parmi les valeurs autorisées
-        $statutsAutorises = ['en attente', 'confirmé', 'annulé'];
+        $statutsAutorises = ['en attente', 'confirmé', 'annulé', 'accepté', 'refusé'];
         if (!in_array($statut, $statutsAutorises)) {
             throw new Exception("Statut invalide");
         }

@@ -187,6 +187,56 @@ class Mailer {
         include $template_path;
         return ob_get_clean();
     }
+    
+    /**
+     * Envoie un email personnalisé avec un contenu HTML fourni directement
+     * 
+     * @param string $email Email du destinataire
+     * @param string $nom Nom du destinataire
+     * @param string $subject Sujet de l'email
+     * @param string $htmlContent Contenu HTML de l'email
+     * @return bool True si l'email a été envoyé avec succès
+     */
+    public function sendCustomEmail($email, $nom, $subject, $htmlContent) {
+        try {
+            // Fonction de log locale
+            $log_file = __DIR__ . '/logs/debug.log';
+            $writeLog = function($message) use ($log_file) {
+                $timestamp = date('Y-m-d H:i:s');
+                file_put_contents($log_file, "[$timestamp] $message\n", FILE_APPEND);
+            };
+            
+            $writeLog("Préparation d'un email personnalisé pour : " . $email);
+            
+            // Validation des entrées
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                throw new Exception("Adresse email invalide");
+            }
+
+            if (empty($nom) || empty($htmlContent)) {
+                throw new Exception("Données manquantes");
+            }
+
+            // Préparation de l'email
+            $this->mailer->clearAddresses();
+            $this->mailer->addAddress($email, $nom);
+
+            $this->mailer->isHTML(true);
+            $this->mailer->Subject = $subject;
+            $this->mailer->Body = $htmlContent;
+            $this->mailer->AltBody = strip_tags($htmlContent);
+
+            // Envoi de l'email
+            $this->mailer->send();
+            
+            $writeLog("Email personnalisé envoyé avec succès à : " . $email);
+            
+            return true;
+        } catch (Exception $e) {
+            error_log("Erreur lors de l'envoi de l'email personnalisé : " . $e->getMessage());
+            return false;
+        }
+    }
 }
 
 ?>

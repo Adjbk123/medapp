@@ -24,6 +24,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (empty($_POST['duree_traitement'])) {
             throw new Exception("La durée du traitement est requise.");
         }
+        if (empty($_POST['signature_data'])) {
+            throw new Exception("La signature du médecin est requise.");
+        }
 
         // Validation de la date de validité
         $date_validite = new DateTime($_POST['date_validite']);
@@ -61,13 +64,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             INSERT INTO ordonnance (
                 idmedecin, idpatient, date_validite, medicaments, 
                 posologie, quantite, duree_medicament, duree_traitement, 
-                instructions, renouvellement, nombre_renouvellements
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                instructions, renouvellement, nombre_renouvellements, signature
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
 
         $renouvellement = isset($_POST['renouvellement']) ? 1 : 0;
         $nombre_renouvellements = isset($_POST['renouvellement']) ? intval($_POST['nombre_renouvellements']) : 0;
 
+        // Traitement de la signature (on stocke directement les données base64)
+        $signature_data = $_POST['signature_data'];
+        
         $stmt->execute([
             $user_id,
             $_POST['idpatient'],
@@ -79,7 +85,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             trim($_POST['duree_traitement']),
             trim($_POST['instructions'] ?? ''),
             $renouvellement,
-            $nombre_renouvellements
+            $nombre_renouvellements,
+            $signature_data
         ]);
 
         $success = "L'ordonnance a été créée avec succès.";
@@ -116,6 +123,40 @@ try {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nouvelle Ordonnance - MedConnect</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0f9f1',
+                            100: '#dcf1e0',
+                            200: '#bbe3c2',
+                            300: '#92ce9a',
+                            400: '#68b56f',
+                            500: '#4d9c52',
+                            600: '#3a7e3f',
+                            700: '#2e6632',
+                            800: '#27512a',
+                            900: '#214425',
+                        },
+                        secondary: {
+                            50: '#f0f7f9',
+                            100: '#dcecf1',
+                            200: '#bbd7e3',
+                            300: '#92bace',
+                            400: '#6898b5',
+                            500: '#4d7e9c',
+                            600: '#3a647e',
+                            700: '#2e5166',
+                            800: '#274151',
+                            900: '#213644',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <?php include_once '../../views/components/styles.php'; ?>
     <style>
@@ -123,30 +164,30 @@ try {
             transition: all 0.3s ease;
         }
         .form-input:focus {
-            box-shadow: 0 0 0 2px rgba(46, 125, 50, 0.2);
+            box-shadow: 0 0 0 2px rgba(77, 156, 82, 0.2);
         }
         .nav-link {
             transition: all 0.3s ease;
         }
         .nav-link:hover {
-            background-color: rgba(46, 125, 50, 0.1);
+            background-color: rgba(77, 156, 82, 0.1);
             transform: translateX(5px);
         }
         .nav-link.active {
-            background-color: rgba(46, 125, 50, 0.2);
-            border-left: 4px solid #2E7D32;
+            background-color: rgba(77, 156, 82, 0.2);
+            border-left: 4px solid #4d9c52;
         }
     </style>
 </head>
-<body class="bg-gradient-to-br from-[#F1F8E9] to-[#E8F5E9] min-h-screen">
+<body class="bg-gradient-to-br from-primary-50 to-primary-100 min-h-screen">
     <div class="min-h-screen flex">
         <!-- Barre latérale -->
         <aside class="w-64 bg-white shadow-lg flex flex-col py-6 px-4">
             <div class="flex items-center justify-center mb-10">
-                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-[#2E7D32] to-[#81C784] flex items-center justify-center">
+                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-primary-600 to-primary-300 flex items-center justify-center">
                     <i class="fas fa-heartbeat text-white text-xl"></i>
                 </div>
-                <h1 class="text-2xl font-bold text-[#1B5E20] ml-3">MedConnect</h1>
+                <h1 class="text-2xl font-bold text-primary-800 ml-3">MedConnect</h1>
             </div>
             <nav class="flex-1 space-y-2">
                 <a href="dashboard.php" class="nav-link block px-4 py-3 rounded-lg text-[#1B5E20]">
@@ -301,6 +342,25 @@ try {
                             <textarea name="instructions" id="instructions" rows="3"
                                       class="form-input w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-[#2E7D32]"
                                       placeholder="Instructions particulières ou recommandations"></textarea>
+                        </div>
+
+                        <!-- Signature numérique -->
+                        <div>
+                            <label class="block text-sm font-medium text-[#1B5E20] mb-2">
+                                Signature du médecin
+                            </label>
+                            <div class="border border-gray-300 rounded-lg p-2 bg-white">
+                                <div class="mb-2 flex justify-between items-center">
+                                    <span class="text-sm text-gray-600">Signez dans la zone ci-dessous</span>
+                                    <button type="button" id="clearSignature" class="text-sm text-[#2E7D32] hover:text-[#1B5E20]">
+                                        <i class="fas fa-eraser mr-1"></i>Effacer
+                                    </button>
+                                </div>
+                                <div class="border border-gray-200 rounded-lg bg-gray-50" style="height: 200px;">
+                                    <canvas id="signatureCanvas" class="w-full h-full"></canvas>
+                                </div>
+                                <input type="hidden" name="signature_data" id="signatureData">
+                            </div>
                         </div>
 
                         <!-- Renouvellement -->
@@ -497,12 +557,119 @@ try {
         ajouterMedicamentBtn.addEventListener('click', ajouterLigneMedicament);
         ajouterLigneMedicament(); // Ajouter une première ligne par défaut
 
+        // Gestion de la signature
+        const signatureCanvas = document.getElementById('signatureCanvas');
+        const signatureData = document.getElementById('signatureData');
+        const clearSignatureBtn = document.getElementById('clearSignature');
+        let ctx;
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+        
+        // Initialiser le canvas
+        function initSignatureCanvas() {
+            ctx = signatureCanvas.getContext('2d');
+            
+            // Ajuster la taille du canvas pour qu'il corresponde à sa taille d'affichage
+            const rect = signatureCanvas.getBoundingClientRect();
+            signatureCanvas.width = rect.width;
+            signatureCanvas.height = rect.height;
+            
+            // Style de ligne
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#1B5E20';
+            
+            // Effacer le canvas
+            clearSignature();
+        }
+        
+        function startDrawing(e) {
+            isDrawing = true;
+            [lastX, lastY] = [e.offsetX, e.offsetY];
+        }
+        
+        function draw(e) {
+            if (!isDrawing) return;
+            
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(e.offsetX, e.offsetY);
+            ctx.stroke();
+            
+            [lastX, lastY] = [e.offsetX, e.offsetY];
+            
+            // Mettre à jour le champ caché avec les données de signature
+            updateSignatureData();
+        }
+        
+        function stopDrawing() {
+            isDrawing = false;
+        }
+        
+        function clearSignature() {
+            ctx.fillStyle = '#f9fafb'; // bg-gray-50
+            ctx.fillRect(0, 0, signatureCanvas.width, signatureCanvas.height);
+            signatureData.value = '';
+        }
+        
+        function updateSignatureData() {
+            signatureData.value = signatureCanvas.toDataURL('image/png');
+        }
+        
+        // Ajouter les écouteurs d'événements pour le canvas de signature
+        signatureCanvas.addEventListener('mousedown', startDrawing);
+        signatureCanvas.addEventListener('mousemove', draw);
+        signatureCanvas.addEventListener('mouseup', stopDrawing);
+        signatureCanvas.addEventListener('mouseout', stopDrawing);
+        
+        // Support tactile
+        signatureCanvas.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousedown', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            signatureCanvas.dispatchEvent(mouseEvent);
+        });
+        
+        signatureCanvas.addEventListener('touchmove', function(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousemove', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            signatureCanvas.dispatchEvent(mouseEvent);
+        });
+        
+        signatureCanvas.addEventListener('touchend', function(e) {
+            e.preventDefault();
+            const mouseEvent = new MouseEvent('mouseup', {});
+            signatureCanvas.dispatchEvent(mouseEvent);
+        });
+        
+        // Bouton pour effacer la signature
+        clearSignatureBtn.addEventListener('click', clearSignature);
+        
+        // Initialiser le canvas au chargement de la page
+        window.addEventListener('load', initSignatureCanvas);
+        window.addEventListener('resize', initSignatureCanvas);
+        
         // Validation du formulaire
         document.querySelector('form').addEventListener('submit', function(e) {
             e.preventDefault(); // Empêcher la soumission par défaut
 
             if (medicaments.length === 0) {
                 alert('Veuillez ajouter au moins un médicament.');
+                return;
+            }
+            
+            // Vérifier si une signature a été ajoutée
+            if (!signatureData.value) {
+                alert('Veuillez signer l\'ordonnance avant de l\'enregistrer.');
                 return;
             }
 

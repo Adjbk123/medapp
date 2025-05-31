@@ -25,6 +25,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     
     $medecin = new Medecin($db);
     
+    // Débug pour voir ce qui est reçu
+    error_log("POST: " . print_r($_POST, true));
+    error_log("FILES: " . print_r($_FILES, true));
+    
     // Validation de la date de naissance
     $date_naissance = new DateTime($_POST['datenais']);
     $aujourd_hui = new DateTime();
@@ -54,6 +58,36 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $medecin->password = $_POST['password'];
             $medecin->setIdSpecialite($_POST['specialite']);
             $medecin->setNum($_POST['num']);
+            
+            // Traitement du fichier de diplôme
+            if (isset($_FILES['diplome']) && $_FILES['diplome']['error'] == 0) {
+                // Générer un nom unique pour le fichier
+                $filename = pathinfo($_FILES['diplome']['name'], PATHINFO_FILENAME);
+                $extension = pathinfo($_FILES['diplome']['name'], PATHINFO_EXTENSION);
+                $unique_name = 'diplome_' . time() . '_' . uniqid() . '.' . $extension;
+                
+                // Définir le chemin de destination
+                $upload_dir = __DIR__ . '/../uploads/diplomes/';
+                if (!is_dir($upload_dir)) {
+                    mkdir($upload_dir, 0777, true);
+                }
+                
+                $target_file = $upload_dir . $unique_name;
+                
+                // Déplacer le fichier téléchargé vers le dossier de destination
+                if (move_uploaded_file($_FILES['diplome']['tmp_name'], $target_file)) {
+                    // Enregistrer le nom du fichier dans l'objet médecin
+                    $medecin->setDiplome($unique_name);
+                    error_log("Fichier de diplôme téléchargé avec succès: $unique_name");
+                } else {
+                    $message = "Erreur lors du téléchargement du fichier de diplôme.";
+                    error_log("Erreur lors du téléchargement du fichier: " . $_FILES['diplome']['error']);
+                }
+            } else {
+                $message = "Veuillez sélectionner un fichier de diplôme valide.";
+                error_log("Erreur de fichier: " . (isset($_FILES['diplome']) ? $_FILES['diplome']['error'] : "Non défini"));
+            }
+
 
             // Vérifier si l'email existe déjà
             if ($medecin->emailExists()) {
@@ -61,28 +95,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             } else {
                 // Vérifier que les mots de passe correspondent
                 if ($_POST['password'] === $_POST['confirm_password']) {
-                    // Enregistrer le médecin et récupérer le token
-                    $token = $medecin->register();
+                    // Enregistrer le médecin
+                    $success = $medecin->register();
                     
-                    if ($token) {
-                        try {
-                            // Envoi de l'email de confirmation
-                            $mailer = new Mailer();
-                            $mailer->sendConfirmationEmail(
-                                $medecin->email,
-                                $medecin->prenom . ' ' . $medecin->nom,
-                                $token
-                            );
-                            
-                            // Rediriger vers la page de connexion avec un message de succès
-                            header("Location: login.php?registered=success&email_sent=true");
-                            exit;
-                        } catch (Exception $e) {
-                            // Si l'envoi de l'email échoue, on continue quand même avec l'inscription
-                            error_log("Erreur lors de l'envoi de l'email de confirmation: " . $e->getMessage());
-                            header("Location: login.php?registered=success&email_sent=false");
-                            exit;
-                        }
+                    if ($success) {
+                        // Rediriger vers la page de connexion avec un message de succès et d'attente de vérification
+                        header("Location: login.php?registered=success&admin_verification=pending");
+                        exit;
                     } else {
                         $message = "Une erreur s'est produite lors de l'inscription. Veuillez réessayer.";
                     }
@@ -366,7 +385,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         </div>
                     </div>
                     
-                    <form method="POST" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" class="space-y-6">
+                    <form method="POST" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" class="space-y-6" enctype="multipart/form-data">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <label for="nom" class="block text-gray-700 text-sm font-medium mb-2">Nom</label>
@@ -425,7 +444,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 </div>
                                 <input type="text" class="form-input" id="num" name="num" placeholder="11 chiffres" required>
                             </div>
-                            <p class="helper-text">Le numéro RPPS est obligatoire pour vérifier votre statut de professionnel de santé.</p>
+                            <p class="helper-text">Le numéro est obligatoire pour vérifier votre statut de professionnel de santé.</p>
+                        </div>
+
+                        <div>
+                            <label for="diplome" class="block text-gray-700 text-sm font-medium mb-2">Diplôme</label>
+                            <div class="form-input-group">
+                                <div class="form-input-icon-wrapper">
+                                    <i class="fas fa-id-card"></i>
+                                </div>
+                                <input type="file" class="form-input" name="diplome" id="diplome" required>
+                            </div>
                         </div>
 
                         <div>

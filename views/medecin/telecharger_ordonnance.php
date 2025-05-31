@@ -160,42 +160,57 @@ $pdf->Cell(0, 7, $ordonnance['medecin_prenom'] . ' ' . $ordonnance['medecin_nom'
 
 // Ajouter l'image de la signature si elle existe
 if (!empty($ordonnance['signature'])) {
-    $signature_path = __DIR__ . '/../../' . $ordonnance['signature'];
-    if (file_exists($signature_path)) {
-        $pdf->Ln(5);
+    $pdf->Ln(5);
+    
+    // Vérifier si la signature est une donnée base64
+    if (strpos($ordonnance['signature'], 'data:image') === 0) {
+        // C'est une donnée base64, on l'extrait et on la décode
+        $signature_data = $ordonnance['signature'];
         
-        // Créer une image temporaire pour la conversion
-        $temp_image = imagecreatetruecolor(500, 200);
-        $white = imagecolorallocate($temp_image, 255, 255, 255);
-        imagefill($temp_image, 0, 0, $white);
-        
-        // Charger l'image PNG originale
-        $original_image = imagecreatefrompng($signature_path);
-        if ($original_image) {
-            // Copier l'image originale sur l'image temporaire
-            imagecopy($temp_image, $original_image, 0, 0, 0, 0, 500, 200);
+        // Extraire les données binaires de l'image
+        $signature_parts = explode(',', $signature_data);
+        if (count($signature_parts) === 2) {
+            $signature_base64 = $signature_parts[1];
+            $signature_binary = base64_decode($signature_base64);
             
-            // Sauvegarder l'image temporaire en JPEG
-            $temp_path = __DIR__ . '/../../uploads/signatures/temp_' . time() . '.jpg';
-            imagejpeg($temp_image, $temp_path, 100);
+            // Créer un fichier temporaire pour l'image
+            $temp_dir = __DIR__ . '/../../uploads/signatures/';
+            
+            // Créer le répertoire s'il n'existe pas
+            if (!file_exists($temp_dir)) {
+                mkdir($temp_dir, 0777, true);
+            }
+            
+            $temp_path = $temp_dir . 'temp_' . time() . '.png';
+            file_put_contents($temp_path, $signature_binary);
             
             // Calculer la position pour aligner à droite
             $page_width = $pdf->GetPageWidth();
             $image_width = 50; // Largeur fixe de 50mm
             $x = $page_width - $image_width - 15; // 15mm de marge droite
             
-            // Ajouter l'image JPEG
+            // Ajouter l'image au PDF
             $pdf->Image($temp_path, $x, $pdf->GetY(), $image_width);
             
-            // Nettoyer
-            imagedestroy($original_image);
-            imagedestroy($temp_image);
+            // Nettoyer le fichier temporaire
             unlink($temp_path);
         } else {
-            error_log('Impossible de charger l\'image PNG: ' . $signature_path);
+            error_log('Format de données de signature invalide');
         }
     } else {
-        error_log('Le fichier de signature n\'existe pas à l\'emplacement: ' . $signature_path);
+        // C'est peut-être un chemin de fichier (ancien format)
+        $signature_path = __DIR__ . '/../../' . $ordonnance['signature'];
+        if (file_exists($signature_path)) {
+            // Calculer la position pour aligner à droite
+            $page_width = $pdf->GetPageWidth();
+            $image_width = 50; // Largeur fixe de 50mm
+            $x = $page_width - $image_width - 15; // 15mm de marge droite
+            
+            // Ajouter l'image au PDF
+            $pdf->Image($signature_path, $x, $pdf->GetY(), $image_width);
+        } else {
+            error_log('Le fichier de signature n\'existe pas à l\'emplacement: ' . $signature_path);
+        }
     }
 } else {
     error_log('Aucune signature trouvée dans l\'ordonnance');

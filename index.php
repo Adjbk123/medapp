@@ -24,8 +24,9 @@ try {
     if (!file_exists('config/config.php')) {
         throw new Exception("Le fichier config.php est introuvable.");
     }
-    require_once 'config/config.php';  
-    
+    require_once 'config/config.php';
+    require_once 'config/paths.php';
+
     if (!file_exists('includes/session.php')) {
         throw new Exception("Le fichier session.php est introuvable.");
     }

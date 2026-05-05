@@ -217,6 +217,9 @@ class Config {
 // Initialiser la configuration
 Config::init();
 
+// Charger les helpers d'URL (url(), redirect())
+require_once __DIR__ . '/paths.php';
+
 // Fonction raccourci pour récupérer une connexion à la base de données
 function db() {
     static $db = null;

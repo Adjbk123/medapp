@@ -1,32 +1,32 @@
 <?php
 function redirectIfNotLoggedIn() {
     if (!isset($_SESSION['user_id']) || !isset($_SESSION['role'])) {
-        header('Location: ../../index.php');
+        header('Location: ' . url('index.php'));
         exit();
     }
 }
 
 function redirectIfNotAuthorized($requiredRole) {
     if (!isset($_SESSION['role']) || $_SESSION['role'] !== $requiredRole) {
-        header('Location: ../../index.php');
+        header('Location: ' . url('index.php'));
         exit();
     }
 }
 
 function getDashboardUrl() {
     if (!isset($_SESSION['role'])) {
-        return '/medapp/index.php';
+        return url('index.php');
     }
-    
+
     switch ($_SESSION['role']) {
         case 'admin':
-            return '/medapp/views/admin/dashboard.php';
+            return url('views/admin/dashboard.php');
         case 'medecin':
-            return '/medapp/views/medecin/dashboard.php';
+            return url('views/medecin/dashboard.php');
         case 'patient':
-            return '/medapp/views/patient/dashboard.php';
+            return url('views/patient/dashboard.php');
         default:
-            return '/medapp/index.php';
+            return url('index.php');
     }
 }
 ?> 

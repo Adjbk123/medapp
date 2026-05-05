@@ -176,32 +176,20 @@ $stats = [
                         <form method="POST">
                             <input type="hidden" name="action" value="update_profile">
                             <div style="margin-bottom:14px;">
-                                <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;">Nom</label>
-                                <div class="admin-input-group">
-                                    <span class="admin-input-group-text"><i class="fas fa-user"></i></span>
-                                    <input type="text" name="nom" value="<?php echo htmlspecialchars($admin['nom']); ?>" class="admin-form-control" required>
-                                </div>
+                                <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:var(--text-secondary);"><i class="fas fa-user" style="margin-right:6px;color:var(--primary-color);"></i>Nom</label>
+                                <input type="text" name="nom" value="<?php echo htmlspecialchars($admin['nom']); ?>" class="admin-form-control" required>
                             </div>
                             <div style="margin-bottom:14px;">
-                                <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;">Prénom</label>
-                                <div class="admin-input-group">
-                                    <span class="admin-input-group-text"><i class="fas fa-user"></i></span>
-                                    <input type="text" name="prenom" value="<?php echo htmlspecialchars($admin['prenom']); ?>" class="admin-form-control" required>
-                                </div>
+                                <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:var(--text-secondary);"><i class="fas fa-user" style="margin-right:6px;color:var(--primary-color);"></i>Prénom</label>
+                                <input type="text" name="prenom" value="<?php echo htmlspecialchars($admin['prenom']); ?>" class="admin-form-control" required>
                             </div>
                             <div style="margin-bottom:14px;">
-                                <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;">Email</label>
-                                <div class="admin-input-group">
-                                    <span class="admin-input-group-text"><i class="fas fa-envelope"></i></span>
-                                    <input type="email" name="email" value="<?php echo htmlspecialchars($admin['email']); ?>" class="admin-form-control" required>
-                                </div>
+                                <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:var(--text-secondary);"><i class="fas fa-envelope" style="margin-right:6px;color:var(--primary-color);"></i>Email</label>
+                                <input type="email" name="email" value="<?php echo htmlspecialchars($admin['email']); ?>" class="admin-form-control" required>
                             </div>
                             <div style="margin-bottom:20px;">
-                                <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;">Contact</label>
-                                <div class="admin-input-group">
-                                    <span class="admin-input-group-text"><i class="fas fa-phone"></i></span>
-                                    <input type="text" name="contact" value="<?php echo htmlspecialchars($admin['contact']); ?>" class="admin-form-control">
-                                </div>
+                                <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:var(--text-secondary);"><i class="fas fa-phone" style="margin-right:6px;color:var(--primary-color);"></i>Contact</label>
+                                <input type="text" name="contact" value="<?php echo htmlspecialchars($admin['contact']); ?>" class="admin-form-control">
                             </div>
                             <button type="submit" class="admin-btn admin-btn-primary" style="width:100%;">
                                 <i class="fas fa-save"></i> Enregistrer les modifications
@@ -226,25 +214,16 @@ $stats = [
                             <form method="POST">
                                 <input type="hidden" name="action" value="change_password">
                                 <div style="margin-bottom:14px;">
-                                    <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;">Ancien mot de passe</label>
-                                    <div class="admin-input-group">
-                                        <span class="admin-input-group-text"><i class="fas fa-lock"></i></span>
-                                        <input type="password" name="old_password" class="admin-form-control" required>
-                                    </div>
+                                    <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:var(--text-secondary);"><i class="fas fa-lock" style="margin-right:6px;color:var(--primary-color);"></i>Ancien mot de passe</label>
+                                    <input type="password" name="old_password" class="admin-form-control" required>
                                 </div>
                                 <div style="margin-bottom:14px;">
-                                    <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;">Nouveau mot de passe</label>
-                                    <div class="admin-input-group">
-                                        <span class="admin-input-group-text"><i class="fas fa-lock"></i></span>
-                                        <input type="password" name="new_password" class="admin-form-control" required>
-                                    </div>
+                                    <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:var(--text-secondary);"><i class="fas fa-lock" style="margin-right:6px;color:var(--primary-color);"></i>Nouveau mot de passe</label>
+                                    <input type="password" name="new_password" class="admin-form-control" required>
                                 </div>
                                 <div style="margin-bottom:20px;">
-                                    <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;">Confirmer le mot de passe</label>
-                                    <div class="admin-input-group">
-                                        <span class="admin-input-group-text"><i class="fas fa-lock"></i></span>
-                                        <input type="password" name="confirm_password" class="admin-form-control" required>
-                                    </div>
+                                    <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;color:var(--text-secondary);"><i class="fas fa-lock" style="margin-right:6px;color:var(--primary-color);"></i>Confirmer le mot de passe</label>
+                                    <input type="password" name="confirm_password" class="admin-form-control" required>
                                 </div>
                                 <button type="submit" class="admin-btn admin-btn-warning" style="width:100%;">
                                     <i class="fas fa-key"></i> Changer le mot de passe

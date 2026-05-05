@@ -190,7 +190,7 @@ class Auth {
             <body>
             <h2>Bonjour,</h2>
             <p>Vous avez demandé la réinitialisation de votre mot de passe. Veuillez cliquer sur le lien ci-dessous pour définir un nouveau mot de passe:</p>
-            <p><a href='http://localhost/medapp/views/reset_password.php?token=$token'>Réinitialiser mon mot de passe</a></p>
+            <p><a href='" . env('APP_URL', '') . url('views/reset_password.php') . "?token=$token'>Réinitialiser mon mot de passe</a></p>
             <p>Ce lien expirera dans 1 heure.</p>
             <p>Si vous n'avez pas demandé la réinitialisation de votre mot de passe, veuillez ignorer cet email.</p>
             <p>Cordialement,<br>L'équipe MedConnect</p>

@@ -93,7 +93,7 @@ class Mailer {
             $this->mailer->clearAddresses();
             $this->mailer->addAddress($email, $nom);
 
-            $confirmation_link = "http://localhost/medapp/views/confirmation.php?token=" . urlencode($token);
+            $confirmation_link = env('APP_URL', '') . url('views/confirmation.php') . "?token=" . urlencode($token);
             $writeLog("Lien de confirmation généré : " . $confirmation_link);
             
             // Template HTML de l'email

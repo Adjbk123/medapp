@@ -1,0 +1,45 @@
+============================================================
+  COMPTES DE TEST - MedConnect
+  Généré le : 2026-05-05
+============================================================
+
+RÔLE : ADMIN
+  Email    : admin@medconnect.com
+  Mot de passe : Admin@123
+  Table BDD    : admin
+  Accès        : Tableau de bord admin (gestion globale)
+
+------------------------------------------------------------
+
+RÔLE : MÉDECIN
+  Email        : medecin@medconnect.com
+  Mot de passe : Medecin@123
+  Table BDD    : medecin
+  Statut       : verified (déjà vérifié, pas besoin de confirmer email)
+  Accès        : Dashboard médecin (patients, consultations, rdv, ordonnances)
+
+------------------------------------------------------------
+
+RÔLE : PATIENT
+  Email        : patient@medconnect.com
+  Mot de passe : Patient@123
+  Table BDD    : patient
+  Statut       : verified
+  Accès        : Dashboard patient (rdv, messages, dossier médical)
+
+============================================================
+  INSTRUCTIONS
+============================================================
+
+1. Exécuter le fichier users_test.sql dans votre base de données :
+   > mysql -u root -p medappdb < users_test.sql
+   ou via phpMyAdmin : importer users_test.sql
+
+2. Si la spécialité id=1 n'existe pas pour le médecin,
+   adapter la valeur idspecialite dans users_test.sql
+   (vérifier la table specialite).
+
+3. Ces comptes sont pour les TESTS uniquement.
+   Supprimer ou changer les mots de passe en production.
+
+============================================================

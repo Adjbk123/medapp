@@ -39,7 +39,7 @@ ini_set('session.cookie_lifetime', $session_lifetime);
 // Paramétrer le cookie
 session_set_cookie_params([
     'lifetime' => $session_lifetime,
-    'path' => '/medapp/', // Chemin spécifique à l'application
+    'path' => '/', // Chemin du cookie de session
     'domain' => '',
     'secure' => $secure,
     'httponly' => $httponly,
@@ -80,7 +80,7 @@ function hasRole($role) {
  */
 function requireLogin() {
     if (!isLoggedIn()) {
-        header('Location: /medapp/views/login.php');
+        header('Location: ' . url('views/login.php'));
         exit();
     }
 }
@@ -94,7 +94,7 @@ function requireLogin() {
 function requireRole($role) {
     requireLogin();
     if (!hasRole($role)) {
-        header('Location: /medapp/index.php');
+        header('Location: ' . url('index.php'));
         exit();
     }
 }
@@ -105,10 +105,10 @@ function requireRole($role) {
 function logout() {
     $_SESSION = array();
     if (isset($_COOKIE[session_name()])) {
-        setcookie(session_name(), '', time() - 3600, '/medapp/');
+        setcookie(session_name(), '', time() - 3600, '/');
     }
     session_destroy();
-    header('Location: /medapp/views/login.php');
+    header('Location: ' . url('views/login.php'));
     exit();
 }
 

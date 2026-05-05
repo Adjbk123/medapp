@@ -10,7 +10,7 @@ $user_id = $_SESSION['user_id'];
 $patient_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
 if (!$patient_id) {
-    header('Location: /medapp/views/medecin/dashboard.php');
+    header('Location: ' . url('views/medecin/dashboard.php'));
     exit;
 }
 

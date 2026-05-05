@@ -24,10 +24,9 @@ $filename = basename($_GET['filename']);
 
 // Essayer différents chemins pour trouver le fichier
 $possible_paths = [
-    __DIR__ . '/../../uploads/diplomes/' . $filename,  // Chemin relatif depuis le script
-    $_SERVER['DOCUMENT_ROOT'] . '/medapp/uploads/diplomes/' . $filename,  // Chemin absolu
-    'C:/xampp/htdocs/medapp/uploads/diplomes/' . $filename,  // Chemin absolu spécifique
-    __DIR__ . '/../../uploads/' . $filename,  // Dossier parent
+    __DIR__ . '/../../uploads/diplomes/' . $filename,
+    $_SERVER['DOCUMENT_ROOT'] . '/uploads/diplomes/' . $filename,
+    __DIR__ . '/../../uploads/' . $filename,
 ];
 
 $file_path = null;

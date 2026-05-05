@@ -323,7 +323,7 @@ class Medecin extends User {
                                 <h2>Bonjour Dr. " . htmlspecialchars($nom_complet) . ",</h2>
                                 <p>Nous avons le plaisir de vous informer que votre compte MedConnect a été vérifié avec succès.</p>
                                 <p>Vous pouvez maintenant vous connecter à votre compte et commencer à utiliser nos services.</p>
-                                <p><a href='http://localhost/medapp/views/login.php'>Se connecter à MedConnect</a></p>
+                                <p><a href='" . env('APP_URL', '') . url('views/login.php') . "'>Se connecter à MedConnect</a></p>
                                 <p>Cordialement,<br>L'équipe MedConnect</p>
                             </body>
                             </html>";

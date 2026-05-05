@@ -3,7 +3,7 @@
 return [
     'client_id' => 'VOTRE_CLIENT_ID',
     'client_secret' => 'VOTRE_CLIENT_SECRET',
-    'redirect_uri' => 'http://localhost/medapp/auth/google-callback.php',
+    'redirect_uri' => env('GOOGLE_REDIRECT_URI', ''),
     'scopes' => [
         'https://www.googleapis.com/auth/calendar',
         'https://www.googleapis.com/auth/calendar.events'

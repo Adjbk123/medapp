@@ -494,7 +494,7 @@ $dernier_message = $stmt->fetch(PDO::FETCH_ASSOC);
                             <h2 class="text-xl font-semibold text-[#1e40af]">
                                 <i class="fas fa-calendar-alt mr-2"></i>Mes Rendez-vous
                             </h2>
-                            <a href="/medapp/views/patient/rdv.php" class="bg-[#3b82f6] hover:bg-[#2563eb] text-white px-4 py-2 rounded-lg transition-colors duration-300 flex items-center">
+                            <a href="<?php echo url('views/patient/rdv.php'); ?>" class="bg-[#3b82f6] hover:bg-[#2563eb] text-white px-4 py-2 rounded-lg transition-colors duration-300 flex items-center">
                                 <i class="fas fa-plus-circle mr-2"></i>Nouveau RDV
                             </a>
                         </div>

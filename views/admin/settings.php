@@ -2,454 +2,293 @@
 require_once '../../includes/session.php';
 require_once '../../config/database.php';
 
-// Vérifier si l'utilisateur est connecté et est un administrateur
 requireLogin();
 requireRole('admin');
 
-// Récupérer les informations de l'administrateur connecté
 $user_id = $_SESSION['user_id'];
-$nom = $_SESSION['nom'] ?? '';
-$prenom = $_SESSION['prenom'] ?? '';
+$nom     = $_SESSION['nom'] ?? '';
+$prenom  = $_SESSION['prenom'] ?? '';
 
-// Connexion à la base de données
 $database = new Database();
 $db = $database->getConnection();
 
-// Traitement des actions
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['action'])) {
-        switch ($_POST['action']) {
-            case 'update_profile':
-                // Mise à jour du profil administrateur
-                $query = "UPDATE admin SET nom = ?, prenom = ?, email = ?, contact = ? WHERE id = ?";
-                $stmt = $db->prepare($query);
-                if ($stmt->execute([
-                    $_POST['nom'],
-                    $_POST['prenom'],
-                    $_POST['email'],
-                    $_POST['contact'],
-                    $user_id
-                ])) {
-                    $success = "Profil mis à jour avec succès.";
-                    $_SESSION['nom'] = $_POST['nom'];
-                    $_SESSION['prenom'] = $_POST['prenom'];
-                } else {
-                    $error = "Erreur lors de la mise à jour du profil.";
-                }
-                break;
+$success = '';
+$error   = '';
 
-            case 'change_password':
-                // Vérification de l'ancien mot de passe
-                $query = "SELECT password FROM admin WHERE id = ?";
-                $stmt = $db->prepare($query);
-                $stmt->execute([$user_id]);
-                $admin = $stmt->fetch(PDO::FETCH_ASSOC);
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    switch ($_POST['action']) {
+        case 'update_profile':
+            $stmt = $db->prepare("UPDATE admin SET nom=?, prenom=?, email=?, contact=? WHERE id=?");
+            if ($stmt->execute([$_POST['nom'], $_POST['prenom'], $_POST['email'], $_POST['contact'], $user_id])) {
+                $success = "Profil mis à jour avec succès.";
+                $_SESSION['nom']    = $_POST['nom'];
+                $_SESSION['prenom'] = $_POST['prenom'];
+                $nom    = $_POST['nom'];
+                $prenom = $_POST['prenom'];
+            } else {
+                $error = "Erreur lors de la mise à jour du profil.";
+            }
+            break;
 
-                if (password_verify($_POST['old_password'], $admin['password'])) {
-                    if ($_POST['new_password'] === $_POST['confirm_password']) {
-                        $query = "UPDATE admin SET password = ? WHERE id = ?";
-                        $stmt = $db->prepare($query);
-                        if ($stmt->execute([password_hash($_POST['new_password'], PASSWORD_DEFAULT), $user_id])) {
-                            $success = "Mot de passe modifié avec succès.";
-                        } else {
-                            $error = "Erreur lors de la modification du mot de passe.";
-                        }
+        case 'change_password':
+            $stmt = $db->prepare("SELECT password FROM admin WHERE id=?");
+            $stmt->execute([$user_id]);
+            $admin = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (password_verify($_POST['old_password'], $admin['password'])) {
+                if ($_POST['new_password'] === $_POST['confirm_password']) {
+                    $stmt = $db->prepare("UPDATE admin SET password=? WHERE id=?");
+                    if ($stmt->execute([password_hash($_POST['new_password'], PASSWORD_DEFAULT), $user_id])) {
+                        $success = "Mot de passe modifié avec succès.";
                     } else {
-                        $error = "Les nouveaux mots de passe ne correspondent pas.";
+                        $error = "Erreur lors de la modification du mot de passe.";
                     }
                 } else {
-                    $error = "Ancien mot de passe incorrect.";
+                    $error = "Les nouveaux mots de passe ne correspondent pas.";
                 }
-                break;
-                
-            case 'update_theme':
-                // Mise à jour du thème
-                $_SESSION['theme'] = $_POST['theme'];
-                $success = "Thème mis à jour avec succès.";
-                break;
-        }
+            } else {
+                $error = "Ancien mot de passe incorrect.";
+            }
+            break;
     }
 }
 
-// Récupérer les informations de l'administrateur
-$query = "SELECT * FROM admin WHERE id = ?";
-$stmt = $db->prepare($query);
+$stmt = $db->prepare("SELECT * FROM admin WHERE id=?");
 $stmt->execute([$user_id]);
 $admin = $stmt->fetch(PDO::FETCH_ASSOC);
 
-// Récupérer les statistiques du système
 $stats = [
-    'Médecins' => $db->query("SELECT COUNT(*) FROM medecin")->fetchColumn(),
-    'Patients' => $db->query("SELECT COUNT(*) FROM patient")->fetchColumn(),
-    'Rendez-vous' => $db->query("SELECT COUNT(*) FROM rendezvous")->fetchColumn(),
-    'Consultations' => $db->query("SELECT COUNT(*) FROM consultation")->fetchColumn()
+    ['label' => 'Médecins',       'icon' => 'fa-user-md',        'color' => 'primary', 'value' => $db->query("SELECT COUNT(*) FROM medecin")->fetchColumn()],
+    ['label' => 'Patients',       'icon' => 'fa-procedures',     'color' => 'success', 'value' => $db->query("SELECT COUNT(*) FROM patient")->fetchColumn()],
+    ['label' => 'Rendez-vous',    'icon' => 'fa-calendar-check', 'color' => 'warning', 'value' => $db->query("SELECT COUNT(*) FROM rendezvous")->fetchColumn()],
+    ['label' => 'Consultations',  'icon' => 'fa-stethoscope',    'color' => 'danger',  'value' => $db->query("SELECT COUNT(*) FROM consultation")->fetchColumn()],
 ];
-
-// Définir le thème actif
-$theme = $_SESSION['theme'] ?? 'light';
 ?>
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Paramètres | MedApp</title>
+    <title>Paramètres | MedApp Admin</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../../assets/css/admin.css">
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="<?php echo $theme === 'dark' ? 'admin-dark-mode' : ''; ?>">
-    <div class="admin-container">
-        <!-- Sidebar -->
-        <div class="admin-sidebar">
-            <div class="admin-sidebar-header">
-                <a href="dashboard.php" class="admin-sidebar-logo">
-                    <i class="fas fa-heartbeat"></i>
-                    <span>MedApp Admin</span>
-                </a>
-                <button class="admin-sidebar-toggle" id="sidebarToggle">
-                    <i class="fas fa-bars"></i>
-                </button>
-            </div>
-            <div class="admin-sidebar-nav">
-                <a href="dashboard.php" class="admin-sidebar-nav-item">
-                    <i class="fas fa-home"></i>
-                    <span>Tableau de bord</span>
-                </a>
-                <a href="doctors.php" class="admin-sidebar-nav-item">
-                    <i class="fas fa-user-md"></i>
-                    <span>Médecins</span>
-                </a>
-                <a href="patients.php" class="admin-sidebar-nav-item">
-                    <i class="fas fa-procedures"></i>
-                    <span>Patients</span>
-                </a>
-                <a href="verify_doctors.php" class="admin-sidebar-nav-item">
-                    <i class="fas fa-check-circle"></i>
-                    <span>Vérification</span>
-                </a>
-                <a href="settings.php" class="admin-sidebar-nav-item active">
-                    <i class="fas fa-cog"></i>
-                    <span>Paramètres</span>
-                </a>
-            </div>
-            <div class="admin-sidebar-footer">
-                <div class="admin-sidebar-user">
-                    <div class="admin-sidebar-user-avatar">
-                        <i class="fas fa-user"></i>
-                    </div>
-                    <div class="admin-sidebar-user-info">
-                        <div class="admin-sidebar-user-name"><?php echo htmlspecialchars($prenom . ' ' . $nom); ?></div>
-                        <div class="admin-sidebar-user-role">Administrateur</div>
-                    </div>
+<body>
+<div class="admin-container">
+
+    <!-- Sidebar -->
+    <div class="admin-sidebar">
+        <div class="admin-sidebar-header">
+            <a href="dashboard.php" class="admin-sidebar-logo">
+                <i class="fas fa-heartbeat"></i>
+                <span>MedApp Admin</span>
+            </a>
+        </div>
+        <div class="admin-sidebar-nav">
+            <a href="dashboard.php" class="admin-sidebar-nav-item">
+                <i class="fas fa-home"></i><span>Tableau de bord</span>
+            </a>
+            <a href="doctors.php" class="admin-sidebar-nav-item">
+                <i class="fas fa-user-md"></i><span>Médecins</span>
+            </a>
+            <a href="patients.php" class="admin-sidebar-nav-item">
+                <i class="fas fa-procedures"></i><span>Patients</span>
+            </a>
+            <a href="verify_doctors.php" class="admin-sidebar-nav-item">
+                <i class="fas fa-check-circle"></i><span>Vérification</span>
+            </a>
+            <a href="settings.php" class="admin-sidebar-nav-item active">
+                <i class="fas fa-cog"></i><span>Paramètres</span>
+            </a>
+        </div>
+        <div class="admin-sidebar-footer">
+            <div class="admin-sidebar-user">
+                <div class="admin-sidebar-user-avatar"><i class="fas fa-user"></i></div>
+                <div class="admin-sidebar-user-info">
+                    <div class="admin-sidebar-user-name"><?php echo htmlspecialchars($prenom . ' ' . $nom); ?></div>
+                    <div class="admin-sidebar-user-role">Administrateur</div>
                 </div>
-                <a href="../logout.php" class="admin-sidebar-nav-item">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span>Déconnexion</span>
-                </a>
             </div>
+            <a href="../logout.php" class="admin-sidebar-nav-item">
+                <i class="fas fa-sign-out-alt"></i><span>Déconnexion</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Main -->
+    <div class="admin-main">
+        <div class="admin-header">
+            <h1 class="admin-header-title">Paramètres</h1>
         </div>
 
-        <!-- Main Content -->
-        <div class="admin-main">
-            <!-- Top Bar -->
-            <div class="admin-header">
-                <h1 class="admin-header-title">Paramètres</h1>
-                <div class="admin-header-actions">
-                    <form method="POST" class="admin-flex admin-items-center admin-gap-4" id="themeForm">
-                        <input type="hidden" name="action" value="update_theme">
-                        <input type="hidden" name="theme" id="themeInput" value="<?php echo $theme; ?>">
-                        <label class="admin-flex admin-items-center admin-gap-2 admin-cursor-pointer">
-                            <input type="checkbox" id="dark-mode-toggle" class="admin-form-control" style="width: auto;" <?php echo $theme === 'dark' ? 'checked' : ''; ?>>
-                            <span>Mode sombre</span>
-                        </label>
-                    </form>
+        <div class="admin-content">
+
+            <?php if ($success): ?>
+            <div class="admin-alert admin-alert-success" style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+                <i class="fas fa-check-circle"></i> <?php echo htmlspecialchars($success); ?>
+                <button onclick="this.parentElement.remove()" style="margin-left:auto;background:none;border:none;cursor:pointer;"><i class="fas fa-times"></i></button>
+            </div>
+            <?php endif; ?>
+
+            <?php if ($error): ?>
+            <div class="admin-alert admin-alert-danger" style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+                <i class="fas fa-exclamation-circle"></i> <?php echo htmlspecialchars($error); ?>
+                <button onclick="this.parentElement.remove()" style="margin-left:auto;background:none;border:none;cursor:pointer;"><i class="fas fa-times"></i></button>
+            </div>
+            <?php endif; ?>
+
+            <!-- Stats rapides -->
+            <div class="admin-stats-grid" style="margin-bottom:28px;">
+                <?php foreach ($stats as $s): ?>
+                <div class="admin-stat-card">
+                    <div class="admin-stat-icon <?php echo $s['color']; ?>">
+                        <i class="fas <?php echo $s['icon']; ?>"></i>
+                    </div>
+                    <div class="admin-stat-info">
+                        <div class="admin-stat-value"><?php echo number_format($s['value']); ?></div>
+                        <div class="admin-stat-label"><?php echo $s['label']; ?></div>
+                    </div>
                 </div>
+                <?php endforeach; ?>
             </div>
 
-            <!-- Content -->
-            <div class="admin-content">
-                <?php if (isset($success)): ?>
-                    <div class="admin-alert admin-alert-success">
-                        <i class="fas fa-check-circle"></i>
-                        <span><?php echo $success; ?></span>
-                        <button class="admin-alert-close admin-ml-auto"><i class="fas fa-times"></i></button>
-                    </div>
-                <?php endif; ?>
+            <!-- Deux colonnes -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
 
-                <?php if (isset($error)): ?>
-                    <div class="admin-alert admin-alert-danger">
-                        <i class="fas fa-exclamation-circle"></i>
-                        <span><?php echo $error; ?></span>
-                        <button class="admin-alert-close admin-ml-auto"><i class="fas fa-times"></i></button>
+                <!-- Profil -->
+                <div class="admin-card">
+                    <div class="admin-card-header">
+                        <h2 class="admin-card-title"><i class="fas fa-user-circle" style="margin-right:8px;"></i>Profil Administrateur</h2>
                     </div>
-                <?php endif; ?>
-
-                <div class="admin-grid admin-grid-cols-1 admin-grid-cols-md-2 admin-gap-6">
-                    <!-- Profil -->
-                    <div class="admin-card admin-card-bordered admin-card-shadow">
-                        <div class="admin-card-header admin-border-bottom">
-                            <h2 class="admin-card-title"><i class="fas fa-user-circle admin-mr-2"></i>Profil Administrateur</h2>
-                        </div>
-                        <div class="admin-card-body">
-                            <div class="admin-flex admin-flex-col admin-items-center admin-mb-4 admin-p-3 admin-border admin-rounded admin-shadow-sm">
-                                <div class="admin-avatar admin-avatar-lg">
-                                    <i class="fas fa-user"></i>
-                                </div>
-                                <h3 class="admin-mt-2 admin-font-semibold"><?php echo htmlspecialchars($prenom . ' ' . $nom); ?></h3>
-                                <p class="admin-text-muted"><?php echo htmlspecialchars($admin['email']); ?></p>
+                    <div class="admin-card-body">
+                        <!-- Avatar -->
+                        <div style="display:flex;align-items:center;gap:16px;padding:16px;background:var(--bg-light);border-radius:var(--radius);margin-bottom:20px;">
+                            <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--primary-color),#818cf8);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                <i class="fas fa-user" style="color:white;font-size:22px;"></i>
                             </div>
-                            <form method="POST">
-                                <input type="hidden" name="action" value="update_profile">
-                                
-                                <div class="admin-form-group admin-mb-3">
-                                    <label class="admin-form-label">Nom</label>
-                                    <div class="admin-input-group admin-border admin-rounded admin-shadow-sm">
-                                        <span class="admin-input-group-text"><i class="fas fa-user"></i></span>
-                                        <input type="text" name="nom" value="<?php echo htmlspecialchars($admin['nom']); ?>" 
-                                               class="admin-form-control">
-                                    </div>
-                                </div>
-                                
-                                <div class="admin-form-group admin-mb-3">
-                                    <label class="admin-form-label">Prénom</label>
-                                    <div class="admin-input-group admin-border admin-rounded admin-shadow-sm">
-                                        <span class="admin-input-group-text"><i class="fas fa-user"></i></span>
-                                        <input type="text" name="prenom" value="<?php echo htmlspecialchars($admin['prenom']); ?>" 
-                                               class="admin-form-control">
-                                    </div>
-                                </div>
-                                
-                                <div class="admin-form-group admin-mb-3">
-                                    <label class="admin-form-label">Email</label>
-                                    <div class="admin-input-group admin-border admin-rounded admin-shadow-sm">
-                                        <span class="admin-input-group-text"><i class="fas fa-envelope"></i></span>
-                                        <input type="email" name="email" value="<?php echo htmlspecialchars($admin['email']); ?>" 
-                                               class="admin-form-control">
-                                    </div>
-                                </div>
-                                
-                                <div class="admin-form-group admin-mb-3">
-                                    <label class="admin-form-label">Contact</label>
-                                    <div class="admin-input-group admin-border admin-rounded admin-shadow-sm">
-                                        <span class="admin-input-group-text"><i class="fas fa-phone"></i></span>
-                                        <input type="text" name="contact" value="<?php echo htmlspecialchars($admin['contact']); ?>" 
-                                               class="admin-form-control">
-                                    </div>
-                                </div>
-                                
-                                <button type="submit" class="admin-btn admin-btn-primary admin-w-full admin-border admin-shadow-sm">
-                                    <i class="fas fa-save"></i>
-                                    <span>Mettre à jour le profil</span>
-                                </button>
-                            </form>
+                            <div>
+                                <div style="font-weight:600;font-size:15px;"><?php echo htmlspecialchars($prenom . ' ' . $nom); ?></div>
+                                <div style="color:var(--text-muted);font-size:13px;"><?php echo htmlspecialchars($admin['email']); ?></div>
+                            </div>
                         </div>
+
+                        <form method="POST">
+                            <input type="hidden" name="action" value="update_profile">
+                            <div style="margin-bottom:14px;">
+                                <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;">Nom</label>
+                                <div class="admin-input-group">
+                                    <span class="admin-input-group-text"><i class="fas fa-user"></i></span>
+                                    <input type="text" name="nom" value="<?php echo htmlspecialchars($admin['nom']); ?>" class="admin-form-control" required>
+                                </div>
+                            </div>
+                            <div style="margin-bottom:14px;">
+                                <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;">Prénom</label>
+                                <div class="admin-input-group">
+                                    <span class="admin-input-group-text"><i class="fas fa-user"></i></span>
+                                    <input type="text" name="prenom" value="<?php echo htmlspecialchars($admin['prenom']); ?>" class="admin-form-control" required>
+                                </div>
+                            </div>
+                            <div style="margin-bottom:14px;">
+                                <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;">Email</label>
+                                <div class="admin-input-group">
+                                    <span class="admin-input-group-text"><i class="fas fa-envelope"></i></span>
+                                    <input type="email" name="email" value="<?php echo htmlspecialchars($admin['email']); ?>" class="admin-form-control" required>
+                                </div>
+                            </div>
+                            <div style="margin-bottom:20px;">
+                                <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;">Contact</label>
+                                <div class="admin-input-group">
+                                    <span class="admin-input-group-text"><i class="fas fa-phone"></i></span>
+                                    <input type="text" name="contact" value="<?php echo htmlspecialchars($admin['contact']); ?>" class="admin-form-control">
+                                </div>
+                            </div>
+                            <button type="submit" class="admin-btn admin-btn-primary" style="width:100%;">
+                                <i class="fas fa-save"></i> Enregistrer les modifications
+                            </button>
+                        </form>
                     </div>
+                </div>
+
+                <!-- Mot de passe + Infos système -->
+                <div style="display:flex;flex-direction:column;gap:24px;">
 
                     <!-- Mot de passe -->
-                    <div class="admin-card admin-card-bordered admin-card-shadow">
-                        <div class="admin-card-header admin-border-bottom">
-                            <h2 class="admin-card-title"><i class="fas fa-key admin-mr-2"></i>Changer le mot de passe</h2>
+                    <div class="admin-card">
+                        <div class="admin-card-header">
+                            <h2 class="admin-card-title"><i class="fas fa-key" style="margin-right:8px;"></i>Changer le mot de passe</h2>
                         </div>
                         <div class="admin-card-body">
-                            <div class="admin-alert admin-alert-info admin-mb-4 admin-border admin-shadow-sm">
+                            <div style="display:flex;align-items:center;gap:10px;padding:12px;background:#eff6ff;border-radius:var(--radius);margin-bottom:16px;font-size:13px;color:#3b82f6;">
                                 <i class="fas fa-info-circle"></i>
-                                <span>Pour des raisons de sécurité, utilisez un mot de passe fort avec des lettres, chiffres et caractères spéciaux.</span>
+                                Utilisez un mot de passe fort (lettres, chiffres, caractères spéciaux).
                             </div>
                             <form method="POST">
                                 <input type="hidden" name="action" value="change_password">
-                                
-                                <div class="admin-form-group admin-mb-3">
-                                    <label class="admin-form-label">Ancien mot de passe</label>
-                                    <div class="admin-input-group admin-border admin-rounded admin-shadow-sm">
+                                <div style="margin-bottom:14px;">
+                                    <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;">Ancien mot de passe</label>
+                                    <div class="admin-input-group">
                                         <span class="admin-input-group-text"><i class="fas fa-lock"></i></span>
-                                        <input type="password" name="old_password" required class="admin-form-control">
+                                        <input type="password" name="old_password" class="admin-form-control" required>
                                     </div>
                                 </div>
-                                
-                                <div class="admin-form-group admin-mb-3">
-                                    <label class="admin-form-label">Nouveau mot de passe</label>
-                                    <div class="admin-input-group admin-border admin-rounded admin-shadow-sm">
+                                <div style="margin-bottom:14px;">
+                                    <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;">Nouveau mot de passe</label>
+                                    <div class="admin-input-group">
                                         <span class="admin-input-group-text"><i class="fas fa-lock"></i></span>
-                                        <input type="password" name="new_password" required class="admin-form-control">
+                                        <input type="password" name="new_password" class="admin-form-control" required>
                                     </div>
                                 </div>
-                                
-                                <div class="admin-form-group admin-mb-3">
-                                    <label class="admin-form-label">Confirmer le mot de passe</label>
-                                    <div class="admin-input-group admin-border admin-rounded admin-shadow-sm">
+                                <div style="margin-bottom:20px;">
+                                    <label style="display:block;font-size:13px;font-weight:500;margin-bottom:6px;">Confirmer le mot de passe</label>
+                                    <div class="admin-input-group">
                                         <span class="admin-input-group-text"><i class="fas fa-lock"></i></span>
-                                        <input type="password" name="confirm_password" required class="admin-form-control">
+                                        <input type="password" name="confirm_password" class="admin-form-control" required>
                                     </div>
                                 </div>
-                                
-                                <button type="submit" class="admin-btn admin-btn-warning admin-w-full admin-border admin-shadow-sm">
-                                    <i class="fas fa-key"></i>
-                                    <span>Changer le mot de passe</span>
+                                <button type="submit" class="admin-btn admin-btn-warning" style="width:100%;">
+                                    <i class="fas fa-key"></i> Changer le mot de passe
                                 </button>
                             </form>
                         </div>
                     </div>
 
-                    <!-- Configuration de l'application -->
-                    <div class="admin-card admin-card-bordered admin-card-shadow">
-                        <div class="admin-card-header admin-border-bottom">
-                            <h2 class="admin-card-title"><i class="fas fa-cogs admin-mr-2"></i>Configuration de l'application</h2>
+                    <!-- Infos système -->
+                    <div class="admin-card">
+                        <div class="admin-card-header">
+                            <h2 class="admin-card-title"><i class="fas fa-server" style="margin-right:8px;"></i>Informations système</h2>
                         </div>
                         <div class="admin-card-body">
-                            <div class="admin-space-y-4">
-                                <div class="admin-flex admin-justify-between admin-items-center admin-p-2 admin-border-bottom">
-                                    <span class="admin-flex admin-items-center"><i class="fas fa-code-branch admin-mr-2"></i>Version</span>
-                                    <span class="admin-badge admin-badge-primary admin-border">1.0.0</span>
+                            <?php
+                            $infos = [
+                                ['icon' => 'fa-code-branch',   'label' => 'Version',          'value' => '1.0.0',                   'badge' => 'primary'],
+                                ['icon' => 'fa-signal',        'label' => 'Statut',            'value' => 'En ligne',                'badge' => 'success'],
+                                ['icon' => 'fa-calendar-alt',  'label' => 'Date du jour',      'value' => date('d/m/Y'),             'badge' => 'primary'],
+                                ['icon' => 'fa-php',           'label' => 'PHP',               'value' => phpversion(),              'badge' => 'warning'],
+                                ['icon' => 'fa-database',      'label' => 'Base de données',   'value' => 'Connectée',               'badge' => 'success'],
+                                ['icon' => 'fa-globe',         'label' => 'Environnement',     'value' => env('APP_ENV','production'),'badge' => 'warning'],
+                            ];
+                            ?>
+                            <div style="display:flex;flex-direction:column;gap:10px;">
+                                <?php foreach ($infos as $info): ?>
+                                <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border-color);">
+                                    <span style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary);">
+                                        <i class="fas <?php echo $info['icon']; ?>" style="width:16px;text-align:center;color:var(--primary-color);"></i>
+                                        <?php echo $info['label']; ?>
+                                    </span>
+                                    <span class="admin-badge admin-badge-<?php echo $info['badge']; ?>"><?php echo htmlspecialchars($info['value']); ?></span>
                                 </div>
-                                <div class="admin-flex admin-justify-between admin-items-center admin-p-2 admin-border-bottom">
-                                    <span class="admin-flex admin-items-center"><i class="fas fa-signal admin-mr-2"></i>Statut</span>
-                                    <span class="admin-badge admin-badge-success admin-border">En ligne</span>
-                                </div>
-                                <div class="admin-flex admin-justify-between admin-items-center admin-p-2 admin-border-bottom">
-                                    <span class="admin-flex admin-items-center"><i class="fas fa-calendar-alt admin-mr-2"></i>Dernière mise à jour</span>
-                                    <span class="admin-badge admin-badge-info admin-border"><?php echo date('Y-m-d'); ?></span>
-                                </div>
-                                <div class="admin-flex admin-justify-between admin-items-center admin-p-2 admin-border-bottom">
-                                    <span class="admin-flex admin-items-center"><i class="fas fa-server admin-mr-2"></i>Environnement</span>
-                                    <span class="admin-badge admin-badge-warning admin-border">Production</span>
-                                </div>
-                                <div class="admin-flex admin-justify-between admin-items-center admin-p-2 admin-border-bottom">
-                                    <span class="admin-flex admin-items-center"><i class="fas fa-database admin-mr-2"></i>Base de données</span>
-                                    <span class="admin-badge admin-badge-success admin-border">Connectée</span>
-                                </div>
-                                <div class="admin-mt-4 admin-p-2">
-                                    <button id="checkUpdatesBtn" class="admin-btn admin-btn-outline admin-w-full admin-border admin-shadow-sm">
-                                        <i class="fas fa-sync"></i>
-                                        <span>Vérifier les mises à jour</span>
-                                    </button>
-                                </div>
+                                <?php endforeach; ?>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Statistiques -->
-                    <div class="admin-card admin-card-bordered admin-card-shadow">
-                        <div class="admin-card-header admin-border-bottom">
-                            <h2 class="admin-card-title"><i class="fas fa-chart-bar admin-mr-2"></i>Statistiques système</h2>
-                            <div class="admin-card-tools">
-                                <button id="refreshStatsBtn" class="admin-btn admin-btn-sm admin-btn-icon admin-btn-outline admin-border admin-shadow-sm">
-                                    <i class="fas fa-sync"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="admin-card-body">
-                            <div class="admin-grid admin-grid-cols-2 admin-gap-4 admin-mb-4">
-                                <?php foreach ($stats as $label => $value): ?>
-                                <div class="admin-stat-card admin-border admin-rounded admin-shadow admin-p-3">
-                                    <div class="admin-stat-icon">
-                                        <i class="<?php 
-                                            echo match($label) {
-                                                'Médecins' => 'fas fa-user-md',
-                                                'Patients' => 'fas fa-procedures',
-                                                'Rendez-vous' => 'fas fa-calendar-check',
-                                                'Consultations' => 'fas fa-stethoscope',
-                                                default => 'fas fa-chart-line'
-                                            }; 
-                                        ?>"></i>
-                                    </div>
-                                    <div class="admin-stat-content">
-                                        <div class="admin-stat-title"><?php echo $label; ?></div>
-                                        <div class="admin-stat-value"><?php echo number_format($value); ?></div>
-                                    </div>
-                                </div>
-                                <?php endforeach; ?>
-                            </div>
-                            <div class="admin-chart-container admin-border admin-rounded admin-p-3 admin-mt-3 admin-shadow-sm">
-                                <div class="admin-text-center admin-p-4">
-                                    <i class="fas fa-chart-line admin-text-3xl admin-text-primary"></i>
-                                    <p class="admin-mt-2">Graphique des statistiques</p>
-                                </div>
-                                <!-- Le graphique sera inséré ici par JavaScript -->
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    <script src="../../assets/js/admin.js"></script>
-    <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Gestion du mode sombre
-        const darkModeToggle = document.getElementById('dark-mode-toggle');
-        const themeForm = document.getElementById('themeForm');
-        const themeInput = document.getElementById('themeInput');
-        
-        if (darkModeToggle) {
-            darkModeToggle.addEventListener('change', function() {
-                document.body.classList.toggle('admin-dark-mode', this.checked);
-                themeInput.value = this.checked ? 'dark' : 'light';
-                themeForm.submit();
-            });
-        }
-        
-        // Fermeture des alertes
-        const closeButtons = document.querySelectorAll('.admin-alert-close');
-        closeButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                this.closest('.admin-alert').style.display = 'none';
-            });
-        });
-        
-        // Bouton de vérification des mises à jour
-        const checkUpdatesBtn = document.getElementById('checkUpdatesBtn');
-        if (checkUpdatesBtn) {
-            checkUpdatesBtn.addEventListener('click', function() {
-                this.disabled = true;
-                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>Vérification en cours...</span>';
-                
-                // Simuler une vérification
-                setTimeout(() => {
-                    this.innerHTML = '<i class="fas fa-check"></i><span>Aucune mise à jour disponible</span>';
-                    this.disabled = false;
-                    
-                    // Créer une alerte pour informer l'utilisateur
-                    const alertContainer = document.querySelector('.admin-content');
-                    const alertDiv = document.createElement('div');
-                    alertDiv.className = 'admin-alert admin-alert-info';
-                    alertDiv.innerHTML = `
-                        <i class="fas fa-info-circle"></i>
-                        <span>Votre application est à jour (version 1.0.0)</span>
-                        <button class="admin-alert-close admin-ml-auto"><i class="fas fa-times"></i></button>
-                    `;
-                    
-                    alertContainer.insertBefore(alertDiv, alertContainer.firstChild);
-                    
-                    // Ajouter l'événement de fermeture à la nouvelle alerte
-                    alertDiv.querySelector('.admin-alert-close').addEventListener('click', function() {
-                        alertDiv.style.display = 'none';
-                    });
-                    
-                    // Restaurer le bouton après quelques secondes
-                    setTimeout(() => {
-                        this.innerHTML = '<i class="fas fa-sync"></i><span>Vérifier les mises à jour</span>';
-                    }, 3000);
-                }, 2000);
-            });
-        }
-        
-        // Bouton de rafraîchissement des statistiques
-        const refreshStatsBtn = document.getElementById('refreshStatsBtn');
-        if (refreshStatsBtn) {
-            refreshStatsBtn.addEventListener('click', function() {
-                this.classList.add('admin-spin');
-                
-                // Simuler un rafraîchissement
-                setTimeout(() => {
-                    this.classList.remove('admin-spin');
-                }, 1000);
-            });
-        }
-    });
-    </script>
+<script src="../../assets/js/admin.js"></script>
 </body>
 </html>

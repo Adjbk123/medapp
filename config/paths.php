@@ -1,6 +1,6 @@
 <?php
 // Définition des chemins de base
-define('BASE_URL', '/medapp');
+define('BASE_URL', rtrim(env('APP_BASE_URL', ''), '/'));
 define('LOGIN_PATH', VIEWS_PATH . '/login.php');
 
 // Fonction pour générer les URLs

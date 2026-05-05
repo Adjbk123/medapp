@@ -42,7 +42,9 @@ try {
     // Redirection si l'utilisateur est déjà connecté
     if (isset($_SESSION['user_id']) && isset($_SESSION['role'])) {
         // Redirection vers le dashboard uniquement si on est sur la page d'accueil
-        if ($_SERVER['REQUEST_URI'] === '/medapp/' || $_SERVER['REQUEST_URI'] === '/medapp/index.php') {
+        $base = rtrim(BASE_URL, '/');
+        $uri  = strtok($_SERVER['REQUEST_URI'], '?');
+        if ($uri === $base . '/' || $uri === $base . '/index.php' || $uri === $base) {
             $dashboard_url = getDashboardUrl();
             header('Location: ' . $dashboard_url);
             exit();

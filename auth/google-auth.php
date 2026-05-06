@@ -1,7 +1,7 @@
 <?php
-require_once '../vendor/autoload.php';
-require_once '../config/config.php';
-require_once '../includes/session.php';
+require_once __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/../config/config.php';
+require_once __DIR__ . '/../includes/session.php';
 
 // Vérifier si l'utilisateur est connecté
 requireLogin();

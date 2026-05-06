@@ -6,9 +6,9 @@ ini_set('display_errors', 0);
 // Démarrer la mise en tampon de sortie
 ob_start();
 
-require_once '../../includes/session.php';
-require_once '../../config/config.php';
-require_once '../../vendor/autoload.php';
+require_once __DIR__ . '/../../includes/session.php';
+require_once __DIR__ . '/../../config/config.php';
+require_once __DIR__ . '/../../vendor/autoload.php';
 
 requireLogin();
 requireRole('patient');

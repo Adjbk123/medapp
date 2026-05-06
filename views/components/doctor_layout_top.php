@@ -85,7 +85,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
         </nav>
         
         <div class="p-4 border-t">
-            <a href="../../logout.php" class="flex items-center px-4 py-3 rounded-xl text-red-600 hover:bg-red-50 transition-colors">
+            <a href="<?php echo url('views/logout.php'); ?>" class="flex items-center px-4 py-3 rounded-xl text-red-600 hover:bg-red-50 transition-colors">
                 <i class="fas fa-sign-out-alt mr-3"></i>Déconnexion
             </a>
         </div>

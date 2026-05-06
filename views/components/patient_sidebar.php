@@ -36,7 +36,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
         </a>
     </nav>
     <div class="mt-6">
-        <a href="./../logout.php" class="block bg-[#FF5252] hover:bg-[#D32F2F] text-white text-center px-4 py-3 rounded-lg transition-colors duration-300">
+        <a href="<?php echo url('views/logout.php'); ?>" class="block bg-[#FF5252] hover:bg-[#D32F2F] text-white text-center px-4 py-3 rounded-lg transition-colors duration-300">
             <i class="fas fa-sign-out-alt mr-2"></i>Déconnexion
         </a>
     </div>

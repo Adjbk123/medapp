@@ -1,193 +1,81 @@
 <?php
-// Activer l'affichage des erreurs pour le débogage
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
-// Inclure les fichiers nécessaires
 require_once '../../includes/session.php';
-require_once '../../includes/security.php';
 require_once '../../config/database.php';
-require_once '../../models/Medecin.php';
 
-// Vérifier si l'utilisateur est connecté et est un administrateur
 requireLogin();
 requireRole('admin');
 
-// Vérifier si un ID a été fourni
-if (!isset($_GET['id']) || empty($_GET['id'])) {
-    echo '<div class="admin-alert admin-alert-danger">ID de médecin non spécifié.</div>';
-    exit;
-}
-
-$medecin_id = intval($_GET['id']);
-
-// Connexion à la base de données
-try {
-    $database = new Database();
-    $db = $database->getConnection();
-} catch (Exception $e) {
-    echo '<div class="admin-alert admin-alert-danger">Erreur de connexion à la base de données: ' . $e->getMessage() . '</div>';
-    exit;
-}
-
-// Récupérer les détails complets du médecin
-$query = "SELECT m.*, s.nomspecialite 
-          FROM medecin m 
-          LEFT JOIN specialite s ON m.idspecialite = s.id 
-          WHERE m.id = ?";
-$stmt = $db->prepare($query);
-$stmt->bindParam(1, $medecin_id);
-$stmt->execute();
-
-if ($stmt->rowCount() === 0) {
-    echo '<div class="admin-alert admin-alert-danger">Médecin non trouvé.</div>';
-    exit;
-}
-
-$doctor = $stmt->fetch(PDO::FETCH_ASSOC);
-
-// Formater la date de naissance
-$date_naissance = !empty($doctor['datenais']) ? date('d/m/Y', strtotime($doctor['datenais'])) : 'Non spécifiée';
-
-// Vérifier si le médecin a un diplôme
-$diplome_path = !empty($doctor['diplome']) ? '../../uploads/diplomes/' . $doctor['diplome'] : '';
-$has_diplome = !empty($diplome_path) && file_exists($diplome_path);
-
-// Récupérer d'autres informations liées au médecin si nécessaire
-// Par exemple, les horaires, les avis, etc.
+if (!isset($_GET['id'])) exit;
+$id = (int)$_GET['id'];
+$db = db();
+$stmt = $db->prepare("SELECT m.*, s.nomspecialite FROM medecin m LEFT JOIN specialite s ON m.idspecialite = s.id WHERE m.id = ?");
+$stmt->execute([$id]);
+$d = $stmt->fetch(PDO::FETCH_ASSOC);
+if (!$d) exit;
 ?>
 
-<div class="admin-grid admin-grid-cols-1 admin-md:grid-cols-2 admin-gap-6">
-    <!-- Informations personnelles -->
-    <div class="admin-card">
-        <div class="admin-card-header">
-            <h4 class="admin-card-title">Informations personnelles</h4>
+<div class="space-y-6">
+    <div class="flex items-center gap-6 p-6 bg-slate-50 rounded-2xl border border-slate-100">
+        <div class="w-20 h-20 rounded-2xl bg-white text-admin-600 flex items-center justify-center text-3xl font-bold shadow-sm border border-slate-100">
+            <?= strtoupper(substr($d['nom'], 0, 1)) ?>
         </div>
-        <div class="admin-card-body">
-            <div class="admin-flex admin-items-center admin-gap-4 admin-mb-4">
-                <div class="admin-stat-icon warning" style="width: 4rem; height: 4rem;">
-                    <i class="fas fa-user-md" style="font-size: 2rem;"></i>
-                </div>
-                <div>
-                    <h3 class="admin-text-xl admin-font-bold"><?php echo htmlspecialchars($doctor['prenom'] . ' ' . $doctor['nom']); ?></h3>
-                    <p class="admin-text-muted"><?php echo htmlspecialchars($doctor['nomspecialite'] ?? 'Spécialité non spécifiée'); ?></p>
-                </div>
-            </div>
-            
-            <div class="admin-grid admin-grid-cols-2 admin-gap-4">
-                <div class="admin-form-group">
-                    <label class="admin-form-label">Nom</label>
-                    <p class="admin-form-control-static"><?php echo htmlspecialchars($doctor['nom']); ?></p>
-                </div>
-                <div class="admin-form-group">
-                    <label class="admin-form-label">Prénom</label>
-                    <p class="admin-form-control-static"><?php echo htmlspecialchars($doctor['prenom']); ?></p>
-                </div>
-                <div class="admin-form-group">
-                    <label class="admin-form-label">Date de naissance</label>
-                    <p class="admin-form-control-static"><?php echo $date_naissance; ?></p>
-                </div>
-                <div class="admin-form-group">
-                    <label class="admin-form-label">Email</label>
-                    <p class="admin-form-control-static"><?php echo htmlspecialchars($doctor['email']); ?></p>
-                </div>
-                <div class="admin-form-group">
-                    <label class="admin-form-label">Téléphone</label>
-                    <p class="admin-form-control-static"><?php echo htmlspecialchars($doctor['contact'] ?? 'Non spécifié'); ?></p>
-                </div>
-                <div class="admin-form-group">
-                    <label class="admin-form-label">Date d'inscription</label>
-                    <p class="admin-form-control-static"><?php echo !empty($doctor['created_at']) ? date('d/m/Y H:i', strtotime($doctor['created_at'])) : 'Non spécifiée'; ?></p>
-                </div>
-            </div>
+        <div>
+            <h3 class="text-xl font-bold text-slate-800">Dr. <?= htmlspecialchars($d['prenom'] . ' ' . $d['nom']) ?></h3>
+            <p class="text-admin-600 font-bold text-sm"><?= htmlspecialchars($d['nomspecialite'] ?? 'Généraliste') ?></p>
+            <p class="text-xs text-slate-400 mt-1 uppercase tracking-wider font-bold">RPPS: <?= htmlspecialchars($d['num'] ?? 'N/A') ?></p>
         </div>
     </div>
 
-    <!-- Informations professionnelles -->
-    <div class="admin-card">
-        <div class="admin-card-header">
-            <h4 class="admin-card-title">Informations professionnelles</h4>
+    <div class="grid grid-cols-2 gap-4">
+        <div class="p-4 bg-white rounded-xl border border-slate-100">
+            <p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Email</p>
+            <p class="text-sm font-bold text-slate-700 truncate"><?= htmlspecialchars($d['email']) ?></p>
         </div>
-        <div class="admin-card-body">
-            <div class="admin-grid admin-grid-cols-2 admin-gap-4">
-                <div class="admin-form-group">
-                    <label class="admin-form-label">Spécialité</label>
-                    <p class="admin-form-control-static"><?php echo htmlspecialchars($doctor['nomspecialite'] ?? 'Non spécifiée'); ?></p>
-                </div>
-                <div class="admin-form-group">
-                    <label class="admin-form-label">Numéro RPPS</label>
-                    <p class="admin-form-control-static">
-                        <span class="admin-badge admin-badge-primary">
-                            <?php echo htmlspecialchars($doctor['num'] ?? 'Non spécifié'); ?>
-                        </span>
-                    </p>
-                </div>
-                <?php if (isset($doctor['experience'])): ?>
-                <div class="admin-form-group">
-                    <label class="admin-form-label">Années d'expérience</label>
-                    <p class="admin-form-control-static"><?php echo htmlspecialchars($doctor['experience']); ?> ans</p>
-                </div>
-                <?php endif; ?>
-                <?php if (isset($doctor['hopital'])): ?>
-                <div class="admin-form-group">
-                    <label class="admin-form-label">Hôpital/Clinique</label>
-                    <p class="admin-form-control-static"><?php echo htmlspecialchars($doctor['hopital']); ?></p>
-                </div>
-                <?php endif; ?>
-                <div class="admin-form-group admin-col-span-2">
-                    <label class="admin-form-label">Diplôme</label>
-                    <?php if ($has_diplome): ?>
-                    <div class="admin-flex admin-items-center admin-gap-2">
-                        <a href="<?php echo $diplome_path; ?>" target="_blank" class="admin-btn admin-btn-sm admin-btn-primary">
-                            <i class="fas fa-file-pdf"></i>
-                            <span>Voir le diplôme</span>
-                        </a>
-                        <span class="admin-text-sm admin-text-muted"><?php echo htmlspecialchars($doctor['diplome']); ?></span>
-                    </div>
-                    <?php else: ?>
-                    <p class="admin-form-control-static">
-                        <span class="admin-badge admin-badge-danger">Aucun diplôme fourni</span>
-                    </p>
-                    <?php endif; ?>
-                </div>
-            </div>
+        <div class="p-4 bg-white rounded-xl border border-slate-100">
+            <p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Téléphone</p>
+            <p class="text-sm font-bold text-slate-700"><?= htmlspecialchars($d['contact'] ?? 'N/A') ?></p>
+        </div>
+        <div class="p-4 bg-white rounded-xl border border-slate-100">
+            <p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Naissance</p>
+            <p class="text-sm font-bold text-slate-700"><?= $d['datenais'] ? date('d/m/Y', strtotime($d['datenais'])) : 'N/A' ?></p>
+        </div>
+        <div class="p-4 bg-white rounded-xl border border-slate-100">
+            <p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Inscription</p>
+            <p class="text-sm font-bold text-slate-700"><?= date('d/m/Y', strtotime($d['created_at'])) ?></p>
         </div>
     </div>
-</div>
 
-<!-- Statut de vérification -->
-<div class="admin-card admin-mt-6">
-    <div class="admin-card-header">
-        <h4 class="admin-card-title">Statut de vérification</h4>
-    </div>
-    <div class="admin-card-body">
-        <div class="admin-flex admin-items-center admin-gap-4">
-            <div class="admin-stat-icon warning">
-                <i class="fas fa-clock"></i>
+    <?php if ($d['diplome']): ?>
+    <div class="p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-white text-indigo-600 rounded-lg flex items-center justify-center shadow-sm">
+                <i class="fas fa-file-pdf"></i>
             </div>
             <div>
-                <h4 class="admin-font-bold">En attente de vérification</h4>
-                <p class="admin-text-sm admin-text-muted">Ce médecin attend votre validation pour pouvoir accéder à la plateforme.</p>
+                <p class="text-xs font-bold text-indigo-900">Diplôme d'État</p>
+                <p class="text-[10px] text-indigo-400 font-bold truncate max-w-[150px]"><?= htmlspecialchars($d['diplome']) ?></p>
             </div>
         </div>
-        
-        <div class="admin-mt-4">
-            <label class="admin-form-label">Commentaire (optionnel)</label>
-            <textarea id="commentaire" name="commentaire" class="admin-form-control" rows="3" placeholder="Ajoutez un commentaire concernant la vérification..."></textarea>
-            <p class="admin-form-text">Ce commentaire sera enregistré dans l'historique de vérification.</p>
-        </div>
+        <a href="../../uploads/diplomes/<?= urlencode($d['diplome']) ?>" target="_blank" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 shadow-md shadow-indigo-200 transition-all">
+            Visualiser
+        </a>
+    </div>
+    <?php endif; ?>
+
+    <div class="space-y-3">
+        <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Commentaire de validation</label>
+        <textarea id="modalComment" class="w-full p-4 bg-slate-50 border-none rounded-2xl text-sm focus:ring-2 focus:ring-admin-500 outline-none min-h-[100px]" placeholder="Motif de validation ou de rejet..."></textarea>
     </div>
 </div>
 
 <script>
-    // Copier le commentaire du modal vers le formulaire principal lors de la soumission
-    document.getElementById('actionFormInModal').addEventListener('submit', function() {
-        const commentaire = document.getElementById('commentaire').value;
-        const commentaireInput = document.createElement('input');
-        commentaireInput.type = 'hidden';
-        commentaireInput.name = 'commentaire';
-        commentaireInput.value = commentaire;
-        this.appendChild(commentaireInput);
-    });
+    // Link modal comment to parent form if needed
+    const modalComment = document.getElementById('modalComment');
+    if (modalComment) {
+        modalComment.oninput = function() {
+            // Can be used to sync with a hidden field in the parent form
+            const parentHidden = document.getElementById('parentCommentHidden');
+            if (parentHidden) parentHidden.value = this.value;
+        };
+    }
 </script>

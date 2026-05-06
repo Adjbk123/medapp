@@ -1,10 +1,9 @@
 <?php
-require_once '../../config/config.php';
-require_once '../../includes/session.php';
-requireLogin();
-requireRole('patient');
+$page_title = "Mon Profil - MedConnect";
+$header_title = "Mon Profil";
+$header_icon = "fas fa-user";
+include_once '../components/patient_layout_top.php';
 
-$user_id = $_SESSION['user_id'];
 $success = "";
 $error = "";
 
@@ -20,7 +19,7 @@ $stmt =  db()->prepare("
     LEFT JOIN carnetsante cs ON pr.idcarnetsante = cs.id
     WHERE p.id = ?
 ");
-$stmt->execute([$user_id]);
+$stmt->execute([$id_patient]);
 $data = $stmt->fetch();
 
 // Pré-remplissage
@@ -59,21 +58,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // MAJ patient
     $stmt =  db()->prepare("UPDATE patient SET nom = ?, prenom = ?, datenais = ?, email = ?, contact = ?, sexe = ? WHERE id = ?");
-    $stmt->execute([$nom, $prenom, $datenais, $email, $contact, $sexe, $user_id]);
+    $stmt->execute([$nom, $prenom, $datenais, $email, $contact, $sexe, $id_patient]);
 
     // MAJ ou insertion profilpatient
     if ($profil_id) {
         $stmt =  db()->prepare("UPDATE profilpatient SET adresse = ?, profession = ? WHERE id = ?");
         $stmt->execute([$adresse, $profession, $profil_id]);
     } else {
-        // D'abord insérer dans carnetsante avec l'id_patient
         $stmt = db()->prepare("INSERT INTO carnetsante (id_patient, groupesanguin, taille, poids, allergie, electrophorese) VALUES (?, '', '', '', '', '')");
-        $stmt->execute([$user_id]);
+        $stmt->execute([$id_patient]);
         $new_carnet_id = db()->lastInsertId();
-        
-        // Ensuite insérer dans profilpatient
         $stmt = db()->prepare("INSERT INTO profilpatient (adresse, profession, idpatient, idcarnetsante) VALUES (?, ?, ?, ?)");
-        $stmt->execute([$adresse, $profession, $user_id, $new_carnet_id]);
+        $stmt->execute([$adresse, $profession, $id_patient, $new_carnet_id]);
     }
 
     // MAJ carnet de santé
@@ -85,243 +81,123 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $success = "Profil mis à jour avec succès.";
 }
 ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profil du Patient - MedConnect</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Poppins', sans-serif;
-            background-color: #f0f9f5;
-        }
-        .nav-link {
-            transition: all 0.3s ease;
-        }
-        .nav-link:hover {
-            background-color: rgba(59, 130, 246, 0.1);
-            transform: translateX(5px);
-        }
-        .nav-link.active {
-            background-color: rgba(59, 130, 246, 0.2);
-            border-left: 4px solid #3b82f6;
-        }
-        .glass-effect {
-            background: rgba(255, 255, 255, 0.9);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        .form-input {
-            transition: all 0.3s ease;
-        }
-        .form-input:focus {
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
-        }
-        .fade-in {
-            animation: fadeIn 0.6s ease-out;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-    </style>
-</head>
-<body class="bg-gradient-to-br from-[#EFF6FF] to-[#DBEAFE] min-h-screen">
-    <div class="min-h-screen flex">
-        <!-- Barre latérale -->
-        <aside class="w-64 bg-white shadow-lg flex flex-col py-6 px-4">
-            <div class="flex items-center justify-center mb-10">
-                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-[#3b82f6] to-[#60a5fa] flex items-center justify-center">
-                    <i class="fas fa-heartbeat text-white text-xl"></i>
-                </div>
-                <h1 class="text-2xl font-bold text-[#1e40af] ml-3">MedConnect</h1>
+
+<style>
+    .form-input { transition: all 0.3s ease; }
+    .form-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1); }
+</style>
+
+<div class="max-w-4xl mx-auto fade-in">
+    <div class="bg-white rounded-xl shadow-lg p-8 glass-effect">
+        <div class="flex items-center space-x-6 mb-8">
+            <div class="w-24 h-24 rounded-full bg-gradient-to-br from-[#3b82f6] to-[#60a5fa] flex items-center justify-center shadow-lg">
+                <i class="fas fa-user text-white text-4xl"></i>
             </div>
-            <nav class="flex-1 space-y-2">
-                <a href="dashboard.php" class="nav-link block px-4 py-3 rounded-lg text-[#1e40af]">
-                    <i class="fas fa-home mr-3"></i>Tableau de bord
-                </a>
-                <a href="carnet.php" class="nav-link block px-4 py-3 rounded-lg text-[#1e40af]">
-                    <i class="fas fa-book-medical mr-3"></i>Mon Carnet de Santé
-                </a>
-                <a href="rdv.php" class="nav-link block px-4 py-3 rounded-lg text-[#1e40af]">
-                    <i class="fas fa-calendar-alt mr-3"></i>Mes Rendez-vous
-                </a>
-                <a href="ordonnace.php" class="nav-link block px-4 py-3 rounded-lg text-[#1e40af]">
-                    <i class="fas fa-prescription mr-3"></i>Mes Ordonnances
-                </a>
-                <a href="consultations.php" class="nav-link block px-4 py-3 rounded-lg text-[#1e40af]">
-                    <i class="fas fa-stethoscope mr-3"></i>Mes Consultations
-                </a>
-                <a href="listes_pharmacie.php" class="nav-link block px-4 py-3 rounded-lg text-[#1e40af]">
-                    <i class="fas fa-pills mr-3"></i>Ma Pharmacie
-                </a>
-                <a href="messages.php" class="nav-link block px-4 py-3 rounded-lg text-[#1e40af]">
-                    <i class="fas fa-envelope mr-3"></i>Messages
-                </a>
-                <a href="profile_patient.php" class="nav-link active block px-4 py-3 rounded-lg text-[#1e40af]">
-                    <i class="fas fa-user mr-3"></i>Mon Profil
-                </a>
-            </nav>
-            <div class="mt-6">
-                <a href="./../logout.php" class="block bg-[#FF5252] hover:bg-[#D32F2F] text-white text-center px-4 py-3 rounded-lg transition-colors duration-300">
-                    <i class="fas fa-sign-out-alt mr-2"></i>Déconnexion
-                </a>
+            <div>
+                <h2 class="text-3xl font-bold text-[#1e40af]"><?= htmlspecialchars($prenom . ' ' . $nom) ?></h2>
+                <p class="text-[#3b82f6] text-lg"><?= htmlspecialchars($email) ?></p>
             </div>
-        </aside>
-
-        <!-- Contenu principal -->
-        <div class="flex-1">
-            <!-- En-tête -->
-            <header class="bg-white shadow-sm">
-                <div class="container mx-auto px-4 py-4 flex justify-between items-center">
-                    <div class="flex items-center space-x-4">
-                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-[#3b82f6] to-[#60a5fa] flex items-center justify-center">
-                            <i class="fas fa-user text-white text-xl"></i>
-                        </div>
-                        <h1 class="text-2xl font-bold text-[#1e40af]"><?php echo htmlspecialchars($prenom . ' ' . $nom); ?></h1>
-                    </div>
-                    <div class="text-sm text-[#3b82f6]">
-                        <i class="fas fa-calendar-alt mr-2"></i><?php echo date('d/m/Y'); ?>
-                    </div>
-                </div>
-            </header>
-
-            <!-- Contenu principal -->
-            <main class="container mx-auto px-4 py-8">
-                <div class="bg-white rounded-xl shadow-lg p-8 max-w-3xl mx-auto glass-effect fade-in">
-                    <div class="flex items-center space-x-4 mb-8">
-                        <div class="w-20 h-20 rounded-full bg-gradient-to-br from-[#3b82f6] to-[#60a5fa] flex items-center justify-center">
-                            <i class="fas fa-user text-white text-3xl"></i>
-                        </div>
-                        <div>
-                            <h2 class="text-2xl font-semibold text-[#1e40af]"><?= htmlspecialchars($prenom . ' ' . $nom) ?></h2>
-                            <p class="text-[#3b82f6]"><?= htmlspecialchars($email) ?></p>
-                        </div>
-                    </div>
-
-                    <?php if (!empty($success)) : ?>
-                        <div class="bg-[#DCFCE7] text-[#065f46] px-4 py-3 rounded-lg mb-6 flex items-center">
-                            <i class="fas fa-check-circle mr-2"></i>
-                            <?= htmlspecialchars($success) ?>
-                        </div>
-                    <?php endif; ?>
-
-                    <form action="profile_patient.php" method="post" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Infos personnelles -->
-                        <div class="col-span-2">
-                            <h3 class="text-lg font-semibold text-[#1e40af] mb-4 flex items-center">
-                                <i class="fas fa-user-circle mr-2"></i>
-                                Informations personnelles
-                            </h3>
-                        </div>
-
-                        <div class="space-y-2">
-                            <label class="block text-sm font-medium text-[#1e40af]">Nom</label>
-                            <input type="text" name="nom" value="<?= htmlspecialchars($nom) ?>" 
-                                   class="form-input w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none">
-                        </div>
-
-                        <div class="space-y-2">
-                            <label class="block text-sm font-medium text-[#1e40af]">Prénom</label>
-                            <input type="text" name="prenom" value="<?= htmlspecialchars($prenom) ?>" 
-                                   class="form-input w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none">
-                        </div>
-
-                        <div class="space-y-2">
-                            <label class="block text-sm font-medium text-[#1e40af]">Email</label>
-                            <input type="email" name="email" value="<?= htmlspecialchars($email) ?>" 
-                                   class="form-input w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none">
-                        </div>
-
-                        <div class="space-y-2">
-                            <label class="block text-sm font-medium text-[#1e40af]">Téléphone</label>
-                            <input type="text" name="telephone" value="<?= htmlspecialchars($contact) ?>" 
-                                   class="form-input w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none">
-                        </div>
-
-                        <div class="space-y-2">
-                            <label class="block text-sm font-medium text-[#1e40af]">Profession</label>
-                            <input type="text" name="profession" value="<?= htmlspecialchars($profession) ?>" 
-                                   class="form-input w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none">
-                        </div>
-
-                        <div class="space-y-2">
-                            <label class="block text-sm font-medium text-[#1e40af]">Date de naissance</label>
-                            <input type="date" name="datenais" value="<?= htmlspecialchars($datenais) ?>" 
-                                   class="form-input w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none">
-                        </div>
-
-                        <div class="space-y-2">
-                            <label class="block text-sm font-medium text-[#1e40af]">Sexe</label>
-                            <select name="sexe" class="form-input w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none">
-                                <option value="">Sélectionnez</option>
-                                <option value="M" <?= $sexe === 'M' ? 'selected' : '' ?>>Masculin</option>
-                                <option value="F" <?= $sexe === 'F' ? 'selected' : '' ?>>Féminin</option>
-                                <option value="A" <?= $sexe === 'A' ? 'selected' : '' ?>>Autre</option>
-                            </select>
-                        </div>
-
-                        <div class="col-span-2 space-y-2">
-                            <label class="block text-sm font-medium text-[#1e40af]">Adresse</label>
-                            <input type="text" name="adresse" value="<?= htmlspecialchars($adresse) ?>" 
-                                   class="form-input w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none">
-                        </div>
-
-                        <!-- Informations médicales -->
-                        <div class="col-span-2 mt-8">
-                            <h3 class="text-lg font-semibold text-[#1e40af] mb-4 flex items-center">
-                                <i class="fas fa-heartbeat mr-2"></i>
-                                Informations médicales
-                            </h3>
-                        </div>
-
-                        <div class="space-y-2">
-                            <label class="block text-sm font-medium text-[#1e40af]">Groupe sanguin</label>
-                            <input type="text" name="groupesanguin" value="<?= htmlspecialchars($groupesanguin) ?>" 
-                                   class="form-input w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none">
-                        </div>
-
-                        <div class="space-y-2">
-                            <label class="block text-sm font-medium text-[#1e40af]">Taille (cm)</label>
-                            <input type="text" name="taille" value="<?= htmlspecialchars($taille) ?>" 
-                                   class="form-input w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none">
-                        </div>
-
-                        <div class="space-y-2">
-                            <label class="block text-sm font-medium text-[#1e40af]">Poids (kg)</label>
-                            <input type="text" name="poids" value="<?= htmlspecialchars($poids) ?>" 
-                                   class="form-input w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none">
-                        </div>
-
-                        <div class="space-y-2">
-                            <label class="block text-sm font-medium text-[#1e40af]">Allergies</label>
-                            <input type="text" name="allergie" value="<?= htmlspecialchars($allergie) ?>" 
-                                   class="form-input w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none">
-                        </div>
-
-                        <div class="space-y-2">
-                            <label class="block text-sm font-medium text-[#1e40af]">Électrophorèse</label>
-                            <input type="text" name="electrophorese" value="<?= htmlspecialchars($electrophorese) ?>" 
-                                   class="form-input w-full border border-gray-200 rounded-lg px-4 py-2 focus:outline-none">
-                        </div>
-
-                        <div class="col-span-2 mt-8">
-                            <button type="submit" class="bg-[#3b82f6] hover:bg-[#2563eb] text-white px-6 py-3 rounded-lg transition-colors duration-300 flex items-center justify-center gap-2 w-full">
-                                <i class="fas fa-save"></i>
-                                Enregistrer les modifications
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </main>
         </div>
+
+        <?php if (!empty($success)) : ?>
+            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-6" role="alert">
+                <span class="block sm:inline"><?= htmlspecialchars($success) ?></span>
+            </div>
+        <?php endif; ?>
+
+        <form action="profile_patient.php" method="post" class="space-y-8">
+            <!-- Section 1: État Civil -->
+            <div>
+                <h3 class="text-xl font-bold text-[#1e40af] mb-4 border-b pb-2">
+                    <i class="fas fa-id-card mr-2"></i>État Civil
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium text-gray-700">Nom</label>
+                        <input type="text" name="nom" value="<?= htmlspecialchars($nom) ?>" class="form-input w-full border rounded-lg px-4 py-2">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium text-gray-700">Prénom</label>
+                        <input type="text" name="prenom" value="<?= htmlspecialchars($prenom) ?>" class="form-input w-full border rounded-lg px-4 py-2">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium text-gray-700">Email</label>
+                        <input type="email" name="email" value="<?= htmlspecialchars($email) ?>" class="form-input w-full border rounded-lg px-4 py-2">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium text-gray-700">Téléphone</label>
+                        <input type="text" name="telephone" value="<?= htmlspecialchars($contact) ?>" class="form-input w-full border rounded-lg px-4 py-2">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium text-gray-700">Date de naissance</label>
+                        <input type="date" name="datenais" value="<?= htmlspecialchars($datenais) ?>" class="form-input w-full border rounded-lg px-4 py-2">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium text-gray-700">Sexe</label>
+                        <select name="sexe" class="form-input w-full border rounded-lg px-4 py-2">
+                            <option value="M" <?= $sexe === 'M' ? 'selected' : '' ?>>Masculin</option>
+                            <option value="F" <?= $sexe === 'F' ? 'selected' : '' ?>>Féminin</option>
+                            <option value="A" <?= $sexe === 'A' ? 'selected' : '' ?>>Autre</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 2: Profession & Adresse -->
+            <div>
+                <h3 class="text-xl font-bold text-[#1e40af] mb-4 border-b pb-2">
+                    <i class="fas fa-briefcase mr-2"></i>Profession & Contact
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium text-gray-700">Profession</label>
+                        <input type="text" name="profession" value="<?= htmlspecialchars($profession) ?>" class="form-input w-full border rounded-lg px-4 py-2">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium text-gray-700">Adresse</label>
+                        <input type="text" name="adresse" value="<?= htmlspecialchars($adresse) ?>" class="form-input w-full border rounded-lg px-4 py-2">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 3: Informations Médicales -->
+            <div>
+                <h3 class="text-xl font-bold text-[#1e40af] mb-4 border-b pb-2">
+                    <i class="fas fa-heartbeat mr-2"></i>Informations Médicales
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium text-gray-700">Groupe sanguin</label>
+                        <input type="text" name="groupesanguin" value="<?= htmlspecialchars($groupesanguin) ?>" class="form-input w-full border rounded-lg px-4 py-2">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium text-gray-700">Taille (cm)</label>
+                        <input type="text" name="taille" value="<?= htmlspecialchars($taille) ?>" class="form-input w-full border rounded-lg px-4 py-2">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium text-gray-700">Poids (kg)</label>
+                        <input type="text" name="poids" value="<?= htmlspecialchars($poids) ?>" class="form-input w-full border rounded-lg px-4 py-2">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium text-gray-700">Allergies</label>
+                        <input type="text" name="allergie" value="<?= htmlspecialchars($allergie) ?>" class="form-input w-full border rounded-lg px-4 py-2">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium text-gray-700">Électrophorèse</label>
+                        <input type="text" name="electrophorese" value="<?= htmlspecialchars($electrophorese) ?>" class="form-input w-full border rounded-lg px-4 py-2">
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-6">
+                <button type="submit" class="w-full bg-[#3b82f6] hover:bg-[#2563eb] text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 shadow-lg transform hover:-translate-y-1">
+                    <i class="fas fa-save mr-2"></i>Mettre à jour mon profil
+                </button>
+            </div>
+        </form>
     </div>
+</div>
 
-
-</body>
-</html>
+<?php include_once '../components/patient_layout_bottom.php'; ?>

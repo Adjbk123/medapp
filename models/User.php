@@ -21,9 +21,14 @@ abstract class User {
     // Méthode abstraite pour l'inscription
     abstract public function register();
     
+    // Méthode pour hacher un mot de passe
+    protected function hashPassword($password) {
+        return password_hash($password, PASSWORD_BCRYPT);
+    }
+    
     // Méthode pour vérifier si l'email existe déjà
     public function emailExists() {
-        $query = "SELECT id, password, nom, prenom, role FROM " . $this->table_name . " WHERE email = ? LIMIT 0,1";
+        $query = "SELECT * FROM " . $this->table_name . " WHERE email = ? LIMIT 0,1";
         $stmt = $this->db->prepare($query);
         $stmt->bindParam(1, $this->email);
         $stmt->execute();
@@ -35,15 +40,11 @@ abstract class User {
             $this->nom = $row['nom'];
             $this->prenom = $row['prenom'];
             $this->role = $row['role'];
+            $this->verification_status = $row['verification_status'] ?? 'verified';
             return true;
         }
         
         return false;
-    }
-    
-    // Méthode pour hacher un mot de passe
-    protected function hashPassword($password) {
-        return password_hash($password, PASSWORD_BCRYPT);
     }
     
     // Méthode pour générer un token de réinitialisation

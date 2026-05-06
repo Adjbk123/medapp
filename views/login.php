@@ -8,14 +8,7 @@ if (session_status() == PHP_SESSION_NONE) {
 }
 
 // Inclusion des fichiers nécessaires
-require_once '../config/database.php';
-require_once '../models/Patient.php';
-require_once '../models/Medecin.php';
 require_once '../includes/session.php';
-
-// Initialiser la connexion à la base de données
-$database = new Database();
-$db = $database->getConnection();
 
 // Définir le chemin racine pour les liens dans header et footer
 $root_path = '../';
@@ -62,17 +55,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
         exit;
     } else {
-        // Vérifier si le compte existe mais n'est pas vérifié
-        $patient = new Patient($db);
-        $patient->email = $email;
-        
-        $medecin = new Medecin($db);
-        $medecin->email = $email;
-        
-        if ($patient->emailExists() && $patient->verification_status !== 'verified') {
-            $message = "Votre compte n'est pas encore vérifié. Veuillez vérifier votre email et cliquer sur le lien de confirmation.";
-        } elseif ($medecin->emailExists() && $medecin->verification_status !== 'verified') {
-            $message = "Votre compte est en attente de vérification par l'administrateur. Vous recevrez une notification dès que votre compte sera validé.";
+        // Si Auth::login a déjà défini un message d'erreur (ex: compte non vérifié), on l'utilise
+        if (isset($_SESSION['login_error'])) {
+            $message = $_SESSION['login_error'];
+            unset($_SESSION['login_error']);
         } else {
             $message = "Email ou mot de passe incorrect. Veuillez réessayer.";
         }

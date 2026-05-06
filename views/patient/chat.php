@@ -1,234 +1,163 @@
 <?php
-require_once '../../includes/session.php';
-require_once '../../config/database.php';
-
-requireLogin();
-requireRole('patient');
-
-$user_id = $_SESSION['user_id'];
-$nom = $_SESSION['nom'];
-$prenom = $_SESSION['prenom'];
+$page_title = "Assistant Médical - MedConnect";
+$header_title = "Assistant Médical";
+$header_icon = "fas fa-robot";
+include_once '../components/patient_layout_top.php';
 ?>
 
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Assistant Médical - MedConnect</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../../assets/css/chatbot.css">
-    <style>
-        body {
-            font-family: 'Poppins', sans-serif;
-            background-color: #f0f9ff;
-            overflow-x: hidden;
-        }
-        .nav-link {
-            transition: all 0.3s ease;
-            border-radius: 8px;
-            margin-bottom: 5px;
-            position: relative;
-            overflow: hidden;
-        }
-        .nav-link:hover {
-            background-color: rgba(59, 130, 246, 0.1);
-            transform: translateX(5px);
-        }
-        .nav-link.active {
-            background-color: rgba(59, 130, 246, 0.15);
-            border-left: 4px solid #3b82f6;
-            font-weight: 500;
-        }
-        .glass-effect {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
-        }
-    </style>
-</head>
-<body class="bg-gradient-to-br from-[#EFF6FF] to-[#DBEAFE] min-h-screen">
-    <!-- Overlay pour mobile -->
-    <div class="overlay" id="overlay"></div>
+<style>
+    .chatbot-container {
+        height: calc(100vh - 300px);
+        display: flex;
+        flex-direction: column;
+        background: #f8fafc;
+        border-radius: 1rem;
+        overflow: hidden;
+        border: 1px solid #e2e8f0;
+    }
+    .chatbot-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    .message {
+        max-width: 80%;
+        padding: 0.8rem 1.2rem;
+        border-radius: 1rem;
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+    .chatbot-message {
+        align-self: flex-start;
+        background: white;
+        color: #1e293b;
+        border-bottom-left-radius: 0.2rem;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+    .user-message {
+        align-self: flex-end;
+        background: #3b82f6;
+        color: white;
+        border-bottom-right-radius: 0.2rem;
+    }
+    .chatbot-input {
+        padding: 1rem 1.5rem;
+        background: white;
+        border-top: 1px solid #e2e8f0;
+        display: flex;
+        gap: 1rem;
+    }
+    #userInput {
+        flex: 1;
+        background: #f1f5f9;
+        border: none;
+        border-radius: 9999px;
+        padding: 0.8rem 1.5rem;
+        outline: none;
+        transition: ring 0.3s;
+    }
+    #userInput:focus {
+        ring: 2px solid #3b82f6;
+    }
+    #sendButton {
+        width: 3rem;
+        height: 3rem;
+        border-radius: 50%;
+        background: #3b82f6;
+        color: white;
+        display: flex;
+        items-center;
+        justify-content: center;
+        transition: transform 0.2s;
+    }
+    #sendButton:hover {
+        transform: scale(1.1);
+        background: #2563eb;
+    }
+</style>
 
-    <div class="min-h-screen flex">
-        <!-- Barre latérale -->
-        <aside class="sidebar w-64 bg-white shadow-lg flex flex-col py-6 px-4 z-50">
-            <div class="flex items-center justify-center mb-10">
-                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-[#3b82f6] to-[#60a5fa] flex items-center justify-center">
-                    <i class="fas fa-heartbeat text-white text-xl"></i>
+<div class="bg-white rounded-xl shadow-lg p-6 glass-effect fade-in">
+    <div class="chatbot-container">
+        <div class="chatbot-messages" id="chatbotMessages">
+            <div class="message chatbot-message">
+                <div class="flex items-center mb-2">
+                    <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mr-2">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <span class="font-bold text-sm">Assistant Médical</span>
                 </div>
-                <div class="ml-3">
-                    <h1 class="text-xl font-bold text-[#1e40af]">MedConnect</h1>
-                    <p class="text-xs text-gray-500">Votre santé, notre priorité</p>
-                </div>
+                Bonjour <?= htmlspecialchars($prenom) ?>, je suis votre assistant médical. Comment puis-je vous aider aujourd'hui ?
             </div>
-            
-            <nav class="flex-1">
-                <ul class="space-y-1">
-                    <li>
-                        <a href="dashboard.php" class="nav-link flex items-center px-4 py-3 text-gray-700 hover:text-[#3b82f6]">
-                            <i class="fas fa-home w-6"></i>
-                            <span>Tableau de bord</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="rdv.php" class="nav-link flex items-center px-4 py-3 text-gray-700 hover:text-[#3b82f6]">
-                            <i class="fas fa-calendar-alt w-6"></i>
-                            <span>Rendez-vous</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="ordonnace.php" class="nav-link flex items-center px-4 py-3 text-gray-700 hover:text-[#3b82f6]">
-                            <i class="fas fa-prescription w-6"></i>
-                            <span>Ordonnances</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="carnet.php" class="nav-link flex items-center px-4 py-3 text-gray-700 hover:text-[#3b82f6]">
-                            <i class="fas fa-book-medical w-6"></i>
-                            <span>Carnet de santé</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="messagerie.php" class="nav-link flex items-center px-4 py-3 text-gray-700 hover:text-[#3b82f6]">
-                            <i class="fas fa-envelope w-6"></i>
-                            <span>Messagerie</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="chat.php" class="nav-link active flex items-center px-4 py-3 text-[#3b82f6]">
-                            <i class="fas fa-comments w-6"></i>
-                            <span>Assistant Médical</span>
-                        </a>
-                    </li>
-                </ul>
-            </nav>
-            
-            <div class="mt-6">
-                <a href="../../logout.php" class="flex items-center px-4 py-3 text-gray-700 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors duration-300">
-                    <i class="fas fa-sign-out-alt w-6"></i>
-                    <span>Déconnexion</span>
-                </a>
-            </div>
-        </aside>
-
-        <div class="flex-1">
-            <!-- En-tête -->
-            <header class="bg-white shadow-md sticky top-0 z-30">
-                <div class="container mx-auto px-4 py-4 flex justify-between items-center">
-                    <div class="flex items-center space-x-4">
-                        <button id="sidebarToggle" class="text-gray-500 hover:text-[#3b82f6] lg:hidden">
-                            <i class="fas fa-bars text-xl"></i>
-                        </button>
-                        <h2 class="text-xl font-semibold text-[#1e40af]">Assistant Médical</h2>
-                    </div>
-                    <div class="flex items-center space-x-4">
-                        <div class="relative">
-                            <button class="flex items-center text-gray-700 hover:text-[#3b82f6]">
-                                <div class="w-10 h-10 rounded-full bg-[#EFF6FF] flex items-center justify-center">
-                                    <i class="fas fa-user text-[#3b82f6]"></i>
-                                </div>
-                                <span class="ml-2 hidden md:block"><?php echo htmlspecialchars($prenom . ' ' . $nom); ?></span>
-                                <i class="fas fa-chevron-down ml-2 text-xs hidden md:block"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </header>
-
-            <main class="container mx-auto px-4 py-8">
-                <div class="bg-white rounded-xl shadow-lg p-6 glass-effect">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-xl font-semibold text-[#1e40af]">
-                            <i class="fas fa-robot mr-2"></i>Assistant Médical
-                        </h2>
-                    </div>
-                    
-                    <div class="chatbot-container">
-                        <div class="chatbot-messages" id="chatbotMessages">
-                            <div class="message chatbot-message">
-                                Bonjour <?php echo htmlspecialchars($prenom); ?>, je suis votre assistant médical. Comment puis-je vous aider aujourd'hui ?
-                            </div>
-                            <!-- Les messages s'afficheront ici -->
-                        </div>
-                        
-                        <div class="chatbot-input">
-                            <input type="text" id="userInput" placeholder="Posez votre question médicale ici..." autocomplete="off">
-                            <button id="sendButton">
-                                <i class="fas fa-paper-plane"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </main>
+        </div>
+        
+        <div class="chatbot-input">
+            <input type="text" id="userInput" placeholder="Décrivez vos symptômes ou posez une question..." autocomplete="off">
+            <button id="sendButton">
+                <i class="fas fa-paper-plane"></i>
+            </button>
         </div>
     </div>
+</div>
 
-    <!-- Scripts -->
-    <script>
-        // Menu mobile toggle
-        document.getElementById('sidebarToggle').addEventListener('click', function() {
-            document.querySelector('.sidebar').classList.toggle('-translate-x-full');
-            document.getElementById('overlay').classList.toggle('active');
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chatbotMessages = document.getElementById('chatbotMessages');
+    const userInput = document.getElementById('userInput');
+    const sendButton = document.getElementById('sendButton');
+
+    function addMessage(message, isUser = false) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = isUser ? 'message user-message' : 'message chatbot-message';
+        
+        if (!isUser) {
+            messageDiv.innerHTML = `
+                <div class="flex items-center mb-2">
+                    <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mr-2">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <span class="font-bold text-sm">Assistant Médical</span>
+                </div>
+                ${message}
+            `;
+        } else {
+            messageDiv.textContent = message;
+        }
+        
+        chatbotMessages.appendChild(messageDiv);
+        chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
+    }
+
+    function sendMessage() {
+        const message = userInput.value.trim();
+        if (message === '') return;
+
+        addMessage(message, true);
+        userInput.value = '';
+
+        // Simuler une réponse ou appeler le process.php
+        fetch('../../chatbot/process.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'message=' + encodeURIComponent(message)
+        })
+        .then(response => response.json())
+        .then(data => {
+            addMessage(data.response);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            addMessage('Désolé, une erreur est survenue. Veuillez réessayer plus tard.');
         });
+    }
 
-        document.getElementById('overlay').addEventListener('click', function() {
-            document.querySelector('.sidebar').classList.remove('-translate-x-full');
-            this.classList.remove('active');
-        });
+    sendButton.addEventListener('click', sendMessage);
+    userInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') sendMessage();
+    });
+});
+</script>
 
-        // Chatbot functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            const chatbotMessages = document.getElementById('chatbotMessages');
-            const userInput = document.getElementById('userInput');
-            const sendButton = document.getElementById('sendButton');
-
-            function addMessage(message, isUser = false) {
-                const messageDiv = document.createElement('div');
-                messageDiv.className = isUser ? 'message user-message' : 'message chatbot-message';
-                messageDiv.textContent = message;
-                chatbotMessages.appendChild(messageDiv);
-                chatbotMessages.scrollTop = chatbotMessages.scrollHeight;
-            }
-
-            function sendMessage() {
-                const message = userInput.value.trim();
-                if (message === '') return;
-
-                // Ajouter le message de l'utilisateur
-                addMessage(message, true);
-                userInput.value = '';
-
-                // Envoyer la requête au serveur
-                fetch('../../chatbot/process.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: 'message=' + encodeURIComponent(message)
-                })
-                .then(response => response.json())
-                .then(data => {
-                    // Ajouter la réponse du chatbot
-                    addMessage(data.response);
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    addMessage('Désolé, une erreur est survenue. Veuillez réessayer plus tard.');
-                });
-            }
-
-            sendButton.addEventListener('click', sendMessage);
-            userInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    sendMessage();
-                }
-            });
-        });
-    </script>
-</body>
-</html>
+<?php include_once '../components/patient_layout_bottom.php'; ?>

@@ -88,57 +88,43 @@ if ($file_path === null || !file_exists($file_path)) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Erreur d\'affichage du diplôme</title>
-    <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; margin: 20px; }
-        h1 { color: #d9534f; }
-        .error { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
-        .info { background-color: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
-        .files { background-color: #fff3cd; border: 1px solid #ffeeba; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
-        ul { margin-top: 10px; }
-    </style>
+    <title>Erreur d\'affichage - MedAdmin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-    <h1>Erreur d\'affichage du diplôme</h1>
-    
-    <div class="error">
-        <strong>Le fichier demandé n\'existe pas.</strong><br>
-        Nom du fichier: ' . htmlspecialchars($filename) . '
-    </div>
-    
-    <div class="info">
-        <strong>Chemins recherchés:</strong>
-        <ul>';
-        foreach ($possible_paths as $path) {
-            echo '<li>' . htmlspecialchars($path) . ' - ' . (file_exists($path) ? 'Existe' : 'N\'existe pas') . '</li>';
-        }
-        echo '</ul>
-    </div>';
-    
-    // Vérifier si le répertoire existe
-    $dir_path = __DIR__ . '/../../uploads/diplomes/';
-    if (!is_dir($dir_path)) {
-        echo '<div class="error">Le répertoire des diplômes n\'existe pas: ' . htmlspecialchars($dir_path) . '</div>';
-    } else {
-        echo '<div class="files">
-            <strong>Fichiers disponibles dans le répertoire:</strong>
-            <ul>';
-        $files = scandir($dir_path);
-        foreach ($files as $file) {
-            if ($file != '.' && $file != '..') {
-                echo '<li>' . htmlspecialchars($file) . ' - <a href="view_diploma.php?filename=' . urlencode($file) . '">Voir ce fichier</a></li>';
-            }
-        }
-        echo '</ul>
-        </div>';
+<body class="bg-slate-50 min-h-screen flex items-center justify-center p-6">
+    <div class="max-w-2xl w-full bg-white rounded-3xl shadow-sm border border-slate-100 p-12 text-center">
+        <div class="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-8 text-3xl">
+            <i class="fas fa-file-excel"></i>
+        </div>
+        <h1 class="text-2xl font-bold text-slate-800 mb-4">Fichier Introuvable</h1>
+        <p class="text-slate-500 mb-8">Le document <span class="font-mono text-admin-600">' . htmlspecialchars($filename) . '</span> est manquant sur le serveur.</p>
         
-        echo '<div class="info">
-            <strong>Suggestion:</strong><br>
-            Utilisez la page <a href="update_diploma.php">Gestion des diplômes</a> pour mettre à jour l\'association entre ce médecin et son fichier de diplôme.
-        </div>';
-    }
-    
-    echo '</body>
+        <div class="text-left bg-slate-50 rounded-2xl p-6 mb-8">
+            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Suggestions</h4>
+            <div class="space-y-3">';
+            
+            $dir_path = __DIR__ . '/../../uploads/diplomes/';
+            if (is_dir($dir_path)) {
+                $files = array_diff(scandir($dir_path), ['.', '..']);
+                if (!empty($files)) {
+                    echo '<p class="text-sm text-slate-600 italic">Fichiers disponibles dans le dossier :</p>';
+                    echo '<ul class="text-sm text-admin-600 font-bold space-y-1">';
+                    foreach (array_slice($files, 0, 5) as $f) {
+                        echo '<li><a href="view_diploma.php?filename=' . urlencode($f) . '" class="hover:underline"># ' . htmlspecialchars($f) . '</a></li>';
+                    }
+                    echo '</ul>';
+                }
+            }
+            
+            echo '</div>
+        </div>
+
+        <div class="flex flex-col gap-3">
+            <a href="update_diploma.php" class="bg-admin-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-admin-700 transition-all shadow-lg shadow-admin-500/20">Réparer les liens</a>
+            <a href="verify_doctors.php" class="text-slate-400 hover:text-slate-600 text-sm font-bold">Retour</a>
+        </div>
+    </div>
+</body>
 </html>';
     exit;
 }
@@ -167,20 +153,30 @@ switch (true) {
         echo '<!DOCTYPE html>
         <html>
         <head>
-            <title>Affichage du diplôme</title>
-            <style>
-                body { margin: 0; padding: 20px; font-family: Arial, sans-serif; background-color: #f5f5f5; }
-                .container { max-width: 1000px; margin: 0 auto; background: white; padding: 20px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-                img { max-width: 100%; height: auto; display: block; margin: 0 auto; border: 1px solid #ddd; }
-                h1 { color: #333; font-size: 24px; margin-bottom: 20px; }
-                .info { margin-bottom: 20px; color: #666; }
-            </style>
+            <title>Aperçu Diplôme - MedAdmin</title>
+            <script src="https://cdn.tailwindcss.com"></script>
+            <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
         </head>
-        <body>
-            <div class="container">
-                <h1>Diplôme du médecin</h1>
-                <div class="info">Fichier: ' . htmlspecialchars($filename) . '</div>
-                <img src="data:' . $mime_type . ';base64,' . base64_encode(file_get_contents($file_path)) . '" alt="Diplôme">
+        <body class="bg-slate-900 min-h-screen p-8 flex flex-col items-center">
+            <div class="w-full max-w-4xl flex justify-between items-center mb-8">
+                <div class="text-white">
+                    <h1 class="text-xl font-bold italic tracking-tight">MedAdmin <span class="text-indigo-400">Viewer</span></h1>
+                    <p class="text-xs text-slate-500 font-mono uppercase tracking-widest mt-1">' . htmlspecialchars($filename) . '</p>
+                </div>
+                <button onclick="window.close()" class="px-6 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-sm font-bold transition-all backdrop-blur-sm border border-white/10">
+                    Fermer l\'aperçu
+                </button>
+            </div>
+            
+            <div class="relative group">
+                <div class="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200"></div>
+                <div class="relative bg-white p-4 rounded-xl shadow-2xl">
+                    <img src="data:' . $mime_type . ';base64,' . base64_encode(file_get_contents($file_path)) . '" class="max-w-full h-auto rounded-lg shadow-inner">
+                </div>
+            </div>
+            
+            <div class="mt-8 text-slate-500 text-[10px] uppercase font-bold tracking-widest flex items-center gap-2">
+                <i class="fas fa-shield-alt text-indigo-500"></i> Document certifié MedConnect
             </div>
         </body>
         </html>';

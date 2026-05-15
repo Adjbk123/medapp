@@ -18,13 +18,13 @@ class Mailer {
     public function __construct() {
         $this->mailer = new PHPMailer(true);
         $this->config = [
-            'host' => env('MAIL_HOST', 'smtp.gmail.com'),
-            'port' => env('MAIL_PORT', 587),
+            'host' => env('MAIL_HOST', 'mail.manosphone.com'),
+            'port' => env('MAIL_PORT', 465),
             'username' => env('MAIL_USERNAME'),
             'password' => env('MAIL_PASSWORD'),
-            'from_email' => env('MAIL_FROM_ADDRESS'),
+            'from_email' => env('MAIL_FROM_ADDRESS', 'medapp@manosphone.com'),
             'from_name' => env('MAIL_FROM_NAME', 'MedConnect'),
-            'encryption' => env('MAIL_ENCRYPTION', 'tls')
+            'encryption' => env('MAIL_ENCRYPTION', 'ssl')
         ];
 
         $this->initializeMailer();
@@ -49,7 +49,9 @@ class Mailer {
             if (env('APP_ENV') === 'development') {
                 $this->mailer->SMTPDebug = SMTP::DEBUG_SERVER;
                 $this->mailer->Debugoutput = function($str, $level) {
-                    error_log("PHPMailer Debug: $str");
+                    $log_file = __DIR__ . '/logs/debug.log';
+                    $timestamp = date('Y-m-d H:i:s');
+                    file_put_contents($log_file, "[$timestamp] PHPMailer Debug: $str\n", FILE_APPEND);
                 };
             } else {
                 $this->mailer->SMTPDebug = SMTP::DEBUG_OFF;
@@ -165,6 +167,49 @@ class Mailer {
         } catch (Exception $e) {
             error_log("Erreur lors de l'envoi de l'email de réinitialisation : " . $e->getMessage());
             throw new Exception("Impossible d'envoyer l'email de réinitialisation");
+        }
+    }
+
+    /**
+     * Envoie un email informant l'utilisateur que son compte a été vérifié
+     * 
+     * @param string $email Email du destinataire
+     * @param string $nom Nom du destinataire
+     * @param string $role Rôle de l'utilisateur (patient ou medecin)
+     * @return bool True si l'email a été envoyé avec succès
+     */
+    public function sendVerificationSuccessEmail($email, $nom, $role) {
+        try {
+            // Validation des entrées
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                throw new Exception("Adresse email invalide");
+            }
+
+            // Préparation de l'email
+            $this->mailer->clearAddresses();
+            $this->mailer->addAddress($email, $nom);
+
+            $login_link = env('APP_URL') . "/views/login.php";
+            
+            // Template HTML de l'email
+            $html = $this->getEmailTemplate('verification_success', [
+                'nom' => htmlspecialchars($nom),
+                'role' => $role,
+                'login_link' => $login_link
+            ]);
+
+            $this->mailer->isHTML(true);
+            $this->mailer->Subject = "Votre compte MedConnect a été vérifié avec succès";
+            $this->mailer->Body = $html;
+            $this->mailer->AltBody = strip_tags($html);
+
+            // Envoi de l'email
+            $this->mailer->send();
+            
+            return true;
+        } catch (Exception $e) {
+            error_log("Erreur lors de l'envoi de l'email de succès de vérification : " . $e->getMessage());
+            return false;
         }
     }
 

@@ -313,52 +313,22 @@ class Medecin extends User {
                 require_once __DIR__ . '/../send_mail.php';
                 $mailer = new Mailer();
                 
-                // Préparer le contenu de l'email
-                $subject = "Votre compte MedConnect a été vérifié";
-                $message = "<html>
-                            <head>
-                                <title>Compte vérifié</title>
-                            </head>
-                            <body>
-                                <h2>Bonjour Dr. " . htmlspecialchars($nom_complet) . ",</h2>
-                                <p>Nous avons le plaisir de vous informer que votre compte MedConnect a été vérifié avec succès.</p>
-                                <p>Vous pouvez maintenant vous connecter à votre compte et commencer à utiliser nos services.</p>
-                                <p><a href='" . env('APP_URL', '') . url('views/login.php') . "'>Se connecter à MedConnect</a></p>
-                                <p>Cordialement,<br>L'équipe MedConnect</p>
-                            </body>
-                            </html>";
+                // Envoyer l'email en utilisant la nouvelle méthode centralisée
+                $result = $mailer->sendVerificationSuccessEmail($email, $nom_complet, 'medecin');
                 
-                // Créer un fichier temporaire pour l'email
-                $temp_file = __DIR__ . '/../views/emails/temp_verification.php';
-                file_put_contents($temp_file, $message);
-                
-                // Envoyer l'email en utilisant la classe Mailer
-                // Note: En environnement de développement, nous simulons l'envoi d'email
-                if (env('APP_ENV') === 'development') {
-                    $writeLog("Simulation d'envoi d'email en environnement de développement");
-                    $writeLog("Email qui aurait été envoyé à: " . $email);
-                    $writeLog("Sujet: " . $subject);
-                    $writeLog("Message: " . $message);
+                if ($result) {
+                    $writeLog("Email de confirmation envoyé avec succès au médecin via la méthode centralisée");
                     return true;
                 } else {
-                    // En production, envoyer réellement l'email
-                    $result = $mailer->sendCustomEmail($email, $nom_complet, $subject, $message);
-                    if ($result) {
-                        $writeLog("Email de confirmation envoyé avec succès");
-                        return true;
-                    } else {
-                        $writeLog("Erreur lors de l'envoi de l'email de confirmation");
-                        return false;
-                    }
+                    $writeLog("Erreur lors de l'envoi de l'email de confirmation au médecin");
+                    return false;
                 }
             } catch (Exception $e) {
                 $writeLog("Exception lors de l'envoi de l'email: " . $e->getMessage());
                 return false;
             }
-        } else {
-            $writeLog("Aucun médecin trouvé avec l'ID: " . $this->id);
-            return false;
         }
+        return false;
     }
     
     /**
@@ -403,7 +373,7 @@ class Medecin extends User {
                                 <p>Nous vous remercions pour votre demande d'inscription à MedConnect.</p>
                                 <p>Après examen de votre dossier, nous ne sommes malheureusement pas en mesure de valider votre compte pour le moment.</p>
                                 <p>Cela peut être dû à des informations incomplètes ou incorrectes. Nous vous invitons à nous contacter pour plus d'informations.</p>
-                                <p>Vous pouvez nous joindre par email à support@medconnect.com ou par téléphone au 01 23 45 67 89.</p>
+                                <p>Vous pouvez nous joindre par email à medapp@manosphone.com ou par téléphone au 01 23 45 67 89.</p>
                                 <p>Cordialement,<br>L'équipe MedConnect</p>
                             </body>
                             </html>";

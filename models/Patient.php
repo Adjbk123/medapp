@@ -236,6 +236,54 @@ class Patient extends User {
         return false;
     }
     
+    /**
+     * Envoie un email de confirmation de vérification au patient
+     * 
+     * @return bool True si l'email a été envoyé avec succès, false sinon
+     */
+    public function sendVerificationConfirmationEmail() {
+        // Fonction de log locale
+        $writeLog = function($message) {
+            $log_file = __DIR__ . '/../logs/debug.log';
+            $timestamp = date('Y-m-d H:i:s');
+            file_put_contents($log_file, "[$timestamp] $message\n", FILE_APPEND);
+        };
+        
+        // Récupérer les informations du patient
+        $query = "SELECT nom, prenom, email FROM " . $this->table_name . " WHERE id = ?";
+        $stmt = $this->db->prepare($query);
+        $stmt->bindParam(1, $this->id);
+        $stmt->execute();
+        
+        if ($stmt->rowCount() > 0) {
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            $nom_complet = $row['prenom'] . ' ' . $row['nom'];
+            $email = $row['email'];
+            
+            $writeLog("Envoi d'un email de confirmation de vérification au patient " . $email);
+            
+            try {
+                require_once __DIR__ . '/../send_mail.php';
+                $mailer = new Mailer();
+                
+                // Envoyer l'email en utilisant la nouvelle méthode centralisée
+                $result = $mailer->sendVerificationSuccessEmail($email, $nom_complet, 'patient');
+                
+                if ($result) {
+                    $writeLog("Email de confirmation envoyé avec succès au patient via la méthode centralisée");
+                    return true;
+                } else {
+                    $writeLog("Erreur lors de l'envoi de l'email de confirmation au patient");
+                    return false;
+                }
+            } catch (Exception $e) {
+                $writeLog("Exception lors de l'envoi de l'email au patient: " . $e->getMessage());
+                return false;
+            }
+        }
+        return false;
+    }
+    
     // Méthode pour supprimer un patient
     public function delete() {
         try {

@@ -32,30 +32,39 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     } else {
         // Vérifier que les mots de passe correspondent
         if ($_POST['password'] === $_POST['confirm_password']) {
-            // Enregistrer le patient et récupérer le token
-            $token = $patient->register();
-            
-            if ($token) {
-                try {
-                    // Envoi de l'email de confirmation
-                    $mailer = new Mailer();
-                    $mailer->sendConfirmationEmail(
-                        $patient->email,
-                        $patient->prenom . ' ' . $patient->nom,
-                        $token
-                    );
-                    
-                    // Rediriger vers la page de connexion avec un message de succès
-                    header("Location: login.php?registered=success&email_sent=true");
-                    exit;
-                } catch (Exception $e) {
-                    // Si l'envoi de l'email échoue, on continue quand même avec l'inscription
-                    error_log("Erreur lors de l'envoi de l'email de confirmation: " . $e->getMessage());
-                    header("Location: login.php?registered=success&email_sent=false");
-                    exit;
+            try {
+                // Enregistrer le patient et récupérer le token
+                $token = $patient->register();
+                
+                if ($token) {
+                    try {
+                        // Envoi de l'email de confirmation
+                        $mailer = new Mailer();
+                        $mailer->sendConfirmationEmail(
+                            $patient->email,
+                            $patient->prenom . ' ' . $patient->nom,
+                            $token
+                        );
+                        
+                        // Rediriger vers la page de connexion avec un message de succès et d'envoi d'email
+                        header("Location: login.php?registered=success&email_sent=true");
+                        exit;
+                    } catch (Exception $e) {
+                        // Si l'envoi de l'email échoue, on continue quand même avec l'inscription
+                        error_log("Erreur lors de l'envoi de l'email de confirmation: " . $e->getMessage());
+                        header("Location: login.php?registered=success&email_sent=false");
+                        exit;
+                    }
+                } else {
+                    $message = "Une erreur s'est produite lors de l'enregistrement. Veuillez réessayer.";
                 }
-            } else {
-                $message = "Une erreur s'est produite lors de l'inscription. Veuillez réessayer.";
+            } catch (Exception $e) {
+                error_log("Exception lors de l'inscription : " . $e->getMessage());
+                $message = "Erreur : " . $e->getMessage();
+                // En mode développement, on peut être plus verbeux
+                if (env('APP_ENV') === 'development') {
+                    $message .= " (Code: " . $e->getCode() . ")";
+                }
             }
         } else {
             $message = "Les mots de passe ne correspondent pas. Veuillez réessayer.";
@@ -365,10 +374,10 @@ if (isLoggedIn()) {
                                 <div class="mt-2 text-sm text-gray-500">
                                     <p>Le mot de passe doit contenir :</p>
                                     <ul class="list-disc list-inside">
-                                        <li>Au moins 5 caractères</li>
-                                        <li>Au moins une lettre</li>
-                                        <li>Au moins un chiffre</li>
-                                        <li>Au moins un symbole (!@#$%^&*()\-_=+{};:,<.>)</li>
+                                        <li class="password-criteria">Au moins 5 caractères</li>
+                                        <li class="password-criteria">Au moins une lettre</li>
+                                        <li class="password-criteria">Au moins un chiffre</li>
+                                        <li class="password-criteria">Au moins un symbole (!@#$%^&*()\-_=+{};:,<.>)</li>
                                     </ul>
                                     </div>
                                 </div>
@@ -488,10 +497,12 @@ if (isLoggedIn()) {
         const isLongEnough = password.length >= 5;
 
         const criteria = document.querySelectorAll('.password-criteria');
-        criteria[0].classList.toggle('text-green-600', isLongEnough);
-        criteria[1].classList.toggle('text-green-600', hasLetter);
-        criteria[2].classList.toggle('text-green-600', hasNumber);
-        criteria[3].classList.toggle('text-green-600', hasSymbol);
+        if (criteria.length >= 4) {
+            criteria[0].classList.toggle('text-green-600', isLongEnough);
+            criteria[1].classList.toggle('text-green-600', hasLetter);
+            criteria[2].classList.toggle('text-green-600', hasNumber);
+            criteria[3].classList.toggle('text-green-600', hasSymbol);
+        }
     });
     </script>
 </body>

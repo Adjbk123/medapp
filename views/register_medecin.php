@@ -493,10 +493,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 <div class="mt-2 text-sm text-gray-500">
                                     <p>Le mot de passe doit contenir :</p>
                                     <ul class="list-disc list-inside">
-                                        <li>Au moins 5 caractères</li>
-                                        <li>Au moins une lettre</li>
-                                        <li>Au moins un chiffre</li>
-                                        <li>Au moins un symbole (!@#$%^&*()\-_=+{};:,<.>)</li>
+                                        <li class="password-criteria">Au moins 5 caractères</li>
+                                        <li class="password-criteria">Au moins une lettre</li>
+                                        <li class="password-criteria">Au moins un chiffre</li>
+                                        <li class="password-criteria">Au moins un symbole (!@#$%^&*()\-_=+{};:,<.>)</li>
                                     </ul>
                                 </div>
                             </div>
@@ -616,10 +616,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         const isLongEnough = password.length >= 5;
 
         const criteria = document.querySelectorAll('.password-criteria');
-        criteria[0].classList.toggle('text-green-600', isLongEnough);
-        criteria[1].classList.toggle('text-green-600', hasLetter);
-        criteria[2].classList.toggle('text-green-600', hasNumber);
-        criteria[3].classList.toggle('text-green-600', hasSymbol);
+        if (criteria.length >= 4) {
+            criteria[0].classList.toggle('text-green-600', isLongEnough);
+            criteria[1].classList.toggle('text-green-600', hasLetter);
+            criteria[2].classList.toggle('text-green-600', hasNumber);
+            criteria[3].classList.toggle('text-green-600', hasSymbol);
+        }
     });
     </script>
 </body>

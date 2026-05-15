@@ -328,19 +328,14 @@ INSERT INTO specialite (nomspecialite) VALUES
 ('Pédiatrie'),
 ('Psychiatrie'),
 ('Radiologie'),
-('Urologie');
+('Urologie'),
+('Dermatologie');
 
 -- Insertion des données de test pour les médecins
 INSERT INTO medecin (nom, prenom, datenais, email, contact, num, password, role, idspecialite) VALUES
 ('Martin', 'Marc', '2010-04-29', 'test2@gmail.com', '0157866959', '12345', '$2y$10$KGG6i8iZhvTrZJkT1sgcg.Lx.Lyc.lvIqzO6kyufWk4IUnmgjHCC2', 'medecin', 7),
 ('FAFA', 'BAKE', '2000-03-03', 'bake@gmail.com', '0157866959', '1234567890', '$2y$10$PXQbkcvvwbuIfb8UvPa97eBHLlx6xG8VGmNdstu4ipEhKrsc/Y0qm', 'medecin', 10),
 ('BALAAM', 'CHARLESSE', '2006-05-25', 'chao@gmail.com', '0157866959', '1234567890', '$2y$10$alROKemqZ2.dy13g4yGoVukHXEDpisgCXOC37f.UZPoQNP/jwxN3m', 'medecin', 8);
-
--- Insertion des données de test pour les carnets de santé
-INSERT INTO carnetsante (id_patient, groupesanguin, taille, poids, allergie, electrophorese) VALUES
-(21, '0+', 165.00, 34.00, 'tomate', 'O'),
-(1, '0+', 165.00, 34.00, 'fleur pollen', '+'),
-(26, '0+', 170.00, 65.00, 'Polléne', '+');
 
 -- Insertion des données de test pour les pharmacies
 INSERT INTO pharmacie (nom, localisation) VALUES

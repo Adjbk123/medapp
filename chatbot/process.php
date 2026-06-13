@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-// Base de données des symptômes et spécialités (à étendre selon les besoins)
+// Base de données des symptômes et spécialités
 $symptomsDatabase = [
     'maux de tête' => [
         'speciality' => 'Neurologue',
@@ -12,12 +12,38 @@ $symptomsDatabase = [
             'Avez-vous des nausées ?'
         ]
     ],
+    'mal de tête' => [
+        'speciality' => 'Neurologue',
+        'urgence' => 'moyenne',
+        'questions' => [
+            'Depuis combien de temps avez-vous ce mal de tête ?',
+            'La douleur est-elle pulsatile ?',
+            'Avez-vous des nausées ?'
+        ]
+    ],
+    'migraine' => [
+        'speciality' => 'Neurologue',
+        'urgence' => 'moyenne',
+        'questions' => [
+            'Depuis combien de temps dure la migraine ?',
+            'Avez-vous des troubles visuels ?',
+            'Avez-vous des nausées ou vomissements ?'
+        ]
+    ],
     'douleur poitrine' => [
         'speciality' => 'Cardiologue',
         'urgence' => 'haute',
         'questions' => [
             'Ressentez-vous une pression ou un serrement ?',
             'La douleur irradie-t-elle dans le bras gauche ?'
+        ]
+    ],
+    'douleur thoracique' => [
+        'speciality' => 'Cardiologue',
+        'urgence' => 'haute',
+        'questions' => [
+            'Ressentez-vous un essoufflement ?',
+            'La douleur irradie-t-elle dans le bras ou la mâchoire ?'
         ]
     ],
     'problèmes de peau' => [
@@ -28,6 +54,14 @@ $symptomsDatabase = [
             'Depuis quand avez-vous ces symptômes ?'
         ]
     ],
+    'éruption cutanée' => [
+        'speciality' => 'Dermatologue',
+        'urgence' => 'basse',
+        'questions' => [
+            'L\'éruption est-elle localisée ou généralisée ?',
+            'Avez-vous de la fièvre en même temps ?'
+        ]
+    ],
     'mal de ventre' => [
         'speciality' => 'Gastro-entérologue',
         'urgence' => 'moyenne',
@@ -35,7 +69,113 @@ $symptomsDatabase = [
             'La douleur est-elle localisée ?',
             'Avez-vous des nausées ou vomissements ?'
         ]
-    ]
+    ],
+    'maux de ventre' => [
+        'speciality' => 'Gastro-entérologue',
+        'urgence' => 'moyenne',
+        'questions' => [
+            'La douleur est-elle localisée ou diffuse ?',
+            'Avez-vous de la diarrhée ou de la constipation ?'
+        ]
+    ],
+    'douleur abdominale' => [
+        'speciality' => 'Gastro-entérologue',
+        'urgence' => 'moyenne',
+        'questions' => [
+            'La douleur est-elle constante ou par crises ?',
+            'Avez-vous des nausées ou vomissements ?'
+        ]
+    ],
+    'toux' => [
+        'speciality' => 'Pneumologue',
+        'urgence' => 'basse',
+        'questions' => [
+            'La toux est-elle sèche ou grasse ?',
+            'Depuis combien de jours toussez-vous ?',
+            'Avez-vous de la fièvre ?'
+        ]
+    ],
+    'essoufflement' => [
+        'speciality' => 'Pneumologue',
+        'urgence' => 'haute',
+        'questions' => [
+            'L\'essoufflement survient-il au repos ou à l\'effort ?',
+            'Avez-vous de la toux ou des douleurs thoraciques ?'
+        ]
+    ],
+    'fièvre' => [
+        'speciality' => 'Médecin généraliste',
+        'urgence' => 'moyenne',
+        'questions' => [
+            'Quelle est votre température approximative ?',
+            'Depuis combien de jours avez-vous de la fièvre ?',
+            'Avez-vous d\'autres symptômes (toux, douleurs) ?'
+        ]
+    ],
+    'fatigue' => [
+        'speciality' => 'Médecin généraliste',
+        'urgence' => 'basse',
+        'questions' => [
+            'La fatigue est-elle présente depuis longtemps ?',
+            'Avez-vous des troubles du sommeil ?'
+        ]
+    ],
+    'mal de dos' => [
+        'speciality' => 'Rhumatologue',
+        'urgence' => 'basse',
+        'questions' => [
+            'La douleur irradie-t-elle dans les jambes ?',
+            'La douleur est-elle constante ou par crises ?'
+        ]
+    ],
+    'douleur articulaire' => [
+        'speciality' => 'Rhumatologue',
+        'urgence' => 'basse',
+        'questions' => [
+            'Quelles articulations sont touchées ?',
+            'Avez-vous des gonflements ou rougeurs ?'
+        ]
+    ],
+    'nausée' => [
+        'speciality' => 'Gastro-entérologue',
+        'urgence' => 'basse',
+        'questions' => [
+            'Avez-vous vomi ?',
+            'Les nausées surviennent-elles après les repas ?'
+        ]
+    ],
+    'nausées' => [
+        'speciality' => 'Gastro-entérologue',
+        'urgence' => 'basse',
+        'questions' => [
+            'Avez-vous vomi ?',
+            'Les nausées surviennent-elles après les repas ?'
+        ]
+    ],
+    'diarrhée' => [
+        'speciality' => 'Gastro-entérologue',
+        'urgence' => 'moyenne',
+        'questions' => [
+            'Depuis combien de jours avez-vous la diarrhée ?',
+            'Avez-vous de la fièvre ou des douleurs ?'
+        ]
+    ],
+    'mal de gorge' => [
+        'speciality' => 'ORL',
+        'urgence' => 'basse',
+        'questions' => [
+            'Avez-vous de la fièvre ?',
+            'Avez-vous des difficultés à avaler ?'
+        ]
+    ],
+    'rhume' => [
+        'speciality' => 'Médecin généraliste',
+        'urgence' => 'basse',
+        'questions' => [
+            'Avez-vous de la fièvre ?',
+            'Depuis combien de jours êtes-vous enrhumé ?'
+        ]
+    ],
 ];
 
 // Initialiser la session si nécessaire
@@ -49,7 +189,7 @@ if (!isset($_SESSION['conversation_state'])) {
 }
 
 // Recevoir le message de l'utilisateur
-$userMessage = strtolower($_POST['message'] ?? '');
+$userMessage = mb_strtolower($_POST['message'] ?? '', 'UTF-8');
 $state = &$_SESSION['conversation_state'];
 
 function analyzeSymptoms($message) {

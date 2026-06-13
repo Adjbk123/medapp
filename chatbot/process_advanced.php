@@ -109,7 +109,7 @@ function processMessage($message, &$state) {
         }
         
         // Normaliser la réponse de l'utilisateur
-        $userResponse = strtolower(trim($message));
+        $userResponse = mb_strtolower(trim($message), 'UTF-8');
         $userResponse = preg_replace('/[^a-z0-9\sà-ÿ]/', '', $userResponse);
         
         // Vérifier si la réponse est valide pour ce type de question
@@ -157,7 +157,7 @@ function processMessage($message, &$state) {
     
     // Étape 3: Proposer une action après l'analyse (rendez-vous, etc.)
     if ($state['step'] === 3) {
-        $lowerMessage = strtolower($message);
+        $lowerMessage = mb_strtolower($message, 'UTF-8');
         
         if (strpos($lowerMessage, 'oui') !== false) {
             // Réinitialiser l'état pour la prochaine conversation

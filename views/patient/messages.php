@@ -7,8 +7,7 @@ include_once '../components/patient_layout_top.php';
 require_once '../../models/Message.php';
 require_once '../../includes/upload_image.php';
 
-$database = new Database();
-$db = $database->getConnection();
+$db = db();
 $message_model = new Message($db);
 
 // Traitement de l'envoi de message

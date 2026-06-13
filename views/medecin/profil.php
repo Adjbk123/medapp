@@ -4,7 +4,7 @@ $header_title = "Dossier Professionnel";
 $header_icon = "fas fa-user-graduate";
 include_once '../components/doctor_layout_top.php';
 
-require_once '../models/ProfilMedecin.php';
+require_once '../../models/ProfilMedecin.php';
 $profilMedecin = new ProfilMedecin($db);
 $profil = $profilMedecin->getProfilByMedecinId($user_id);
 

@@ -14,8 +14,21 @@ function calculateAge($birthdate) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'], $_POST['patient_id'])) {
     $pid = (int)$_POST['patient_id'];
     if ($_POST['action'] === 'delete') {
-        $db->prepare("DELETE FROM patient WHERE id = ?")->execute([$pid]);
-        $success = "Patient supprimé avec succès.";
+        try {
+            $db->beginTransaction();
+            $db->prepare("DELETE FROM messages WHERE sender_id = ? OR receiver_id = ?")->execute([$pid, $pid]);
+            $db->prepare("DELETE FROM rendezvous WHERE idpatient = ?")->execute([$pid]);
+            $db->prepare("DELETE FROM consultation WHERE id_patient = ?")->execute([$pid]);
+            $db->prepare("DELETE FROM ordonnance WHERE idpatient = ?")->execute([$pid]);
+            $db->prepare("DELETE FROM carnetsante WHERE id_patient = ?")->execute([$pid]);
+            $db->prepare("DELETE FROM dossiers_medicaux WHERE id_patient = ?")->execute([$pid]);
+            $db->prepare("DELETE FROM patient WHERE id = ?")->execute([$pid]);
+            $db->commit();
+            $success = "Patient supprimé avec succès.";
+        } catch (Exception $e) {
+            $db->rollBack();
+            $error = "Impossible de supprimer ce patient : " . $e->getMessage();
+        }
     }
 }
 
@@ -26,7 +39,12 @@ $patients = $db->query("SELECT * FROM patient ORDER BY created_at DESC")->fetchA
 <div class="fade-in space-y-8">
     <?php if (isset($success)): ?>
         <div class="p-4 bg-emerald-50 text-emerald-700 rounded-2xl border border-emerald-100 flex items-center gap-3">
-            <i class="fas fa-check-circle"></i> <?= $success ?>
+            <i class="fas fa-check-circle"></i> <?= htmlspecialchars($success) ?>
+        </div>
+    <?php endif; ?>
+    <?php if (isset($error)): ?>
+        <div class="p-4 bg-red-50 text-red-700 rounded-2xl border border-red-100 flex items-center gap-3">
+            <i class="fas fa-exclamation-circle"></i> <?= htmlspecialchars($error) ?>
         </div>
     <?php endif; ?>
 

@@ -5,7 +5,7 @@ $header_icon = "fas fa-users";
 include_once '../components/doctor_layout_top.php';
 
 try {
-    $stmt = $db->prepare("SELECT * FROM patient WHERE id_medecin = ? ORDER BY nom, prenom");
+    $stmt = $db->prepare("SELECT DISTINCT p.* FROM patient p JOIN rendezvous r ON p.id = r.idpatient WHERE r.idmedecin = ? ORDER BY p.nom, p.prenom");
     $stmt->execute([$user_id]);
     $patients = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {

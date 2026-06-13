@@ -72,11 +72,11 @@ class Dashboard {
 
     // Obtenir les rendez-vous du jour
     public function getRendezVousDuJour() {
-        $query = "SELECT r.*, p.nom, p.prenom 
-                 FROM rendezvous r 
-                 INNER JOIN patient p ON r.idpatient = p.id 
-                 WHERE r.idmedecin = ? 
-                 AND DATE(r.dateheure) = CURDATE() 
+        $query = "SELECT r.*, p.nom as patient_nom, p.prenom as patient_prenom
+                 FROM rendezvous r
+                 INNER JOIN patient p ON r.idpatient = p.id
+                 WHERE r.idmedecin = ?
+                 AND DATE(r.dateheure) = CURDATE()
                  ORDER BY r.dateheure ASC";
         $stmt = $this->db->prepare($query);
         $stmt->execute([$this->medecin_id]);
@@ -85,50 +85,45 @@ class Dashboard {
 
     // Obtenir les rappels importants
     public function getRappelsImportants() {
-        $rappels = [
-            'vaccins' => $this->getRappelsVaccins(),
-            'dossiers' => $this->getDossiersAMettreAJour(),
-            'rdv_confirmation' => $this->getRendezVousEnAttente()
-        ];
+        $rappels = [];
+
+        try {
+            $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM rendezvous WHERE idmedecin = ? AND statut = 'en attente' AND dateheure >= CURDATE()");
+            $stmt->execute([$this->medecin_id]);
+            $total = (int)$stmt->fetch(PDO::FETCH_ASSOC)['total'];
+            if ($total > 0) {
+                $rappels[] = [
+                    'titre' => "$total rendez-vous en attente de confirmation",
+                    'description' => 'Veuillez confirmer ou annuler ces rendez-vous.'
+                ];
+            }
+        } catch (Exception $e) {}
+
+        try {
+            $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM rendezvous WHERE idmedecin = ? AND DATE(dateheure) = CURDATE()");
+            $stmt->execute([$this->medecin_id]);
+            $total = (int)$stmt->fetch(PDO::FETCH_ASSOC)['total'];
+            if ($total > 0) {
+                $rappels[] = [
+                    'titre' => "$total rendez-vous aujourd'hui",
+                    'description' => "Consultez votre agenda pour voir les détails."
+                ];
+            }
+        } catch (Exception $e) {}
+
+        try {
+            $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM messages WHERE receiver_id = ? AND lu = 0");
+            $stmt->execute([$this->medecin_id]);
+            $total = (int)$stmt->fetch(PDO::FETCH_ASSOC)['total'];
+            if ($total > 0) {
+                $rappels[] = [
+                    'titre' => "$total message(s) non lu(s)",
+                    'description' => 'Vous avez des messages en attente de lecture.'
+                ];
+            }
+        } catch (Exception $e) {}
+
         return $rappels;
-    }
-
-    private function getRappelsVaccins() {
-        $query = "SELECT COUNT(*) as total 
-                 FROM vaccins 
-                 WHERE id_patient IN (
-                     SELECT idpatient FROM rendezvous WHERE idmedecin = ?
-                 ) 
-                 AND date_rappel <= DATE_ADD(CURDATE(), INTERVAL 7 DAY)";
-        $stmt = $this->db->prepare($query);
-        $stmt->execute([$this->medecin_id]);
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $result['total'];
-    }
-
-    private function getDossiersAMettreAJour() {
-        $query = "SELECT COUNT(*) as total 
-                 FROM dossiers_medicaux 
-                 WHERE id_patient IN (
-                     SELECT idpatient FROM rendezvous WHERE idmedecin = ?
-                 ) 
-                 AND derniere_maj <= DATE_SUB(CURDATE(), INTERVAL 3 MONTH)";
-        $stmt = $this->db->prepare($query);
-        $stmt->execute([$this->medecin_id]);
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $result['total'];
-    }
-
-    private function getRendezVousEnAttente() {
-        $query = "SELECT COUNT(*) as total 
-                 FROM rendezvous 
-                 WHERE idmedecin = ? 
-                 AND statut = 'en attente' 
-                 AND dateheure >= CURDATE()";
-        $stmt = $this->db->prepare($query);
-        $stmt->execute([$this->medecin_id]);
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $result['total'];
     }
 }
 ?> 

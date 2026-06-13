@@ -6,8 +6,8 @@ header("X-Content-Type-Options: nosniff");
 header("Referrer-Policy: strict-origin-when-cross-origin");
 header("Content-Security-Policy: default-src 'self' https: 'unsafe-inline' 'unsafe-eval'; img-src 'self' https: data:;");
 
-// Mode débogage forcé pour identifier l'erreur
-ini_set('display_errors', 1);
+// Masquer les erreurs en production (les erreurs sont loguées)
+ini_set('display_errors', 0);
 error_reporting(E_ALL);
 
 // Définir le chemin racine pour les liens dans header et footer

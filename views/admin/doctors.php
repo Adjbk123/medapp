@@ -14,8 +14,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'], $_POST['med
         $db->prepare("UPDATE medecin SET verification_status = 'rejected' WHERE id = ?")->execute([$mid]);
         $success = "Médecin rejeté.";
     } elseif ($_POST['action'] === 'delete') {
-        $db->prepare("DELETE FROM medecin WHERE id = ?")->execute([$mid]);
-        $success = "Médecin supprimé.";
+        try {
+            $db->beginTransaction();
+            $db->prepare("DELETE FROM messages WHERE sender_id = ? OR receiver_id = ?")->execute([$mid, $mid]);
+            $db->prepare("DELETE FROM rendezvous WHERE idmedecin = ?")->execute([$mid]);
+            $db->prepare("UPDATE consultation SET id_medecin = NULL WHERE id_medecin = ?")->execute([$mid]);
+            $db->prepare("UPDATE ordonnance SET idmedecin = NULL WHERE idmedecin = ?")->execute([$mid]);
+            $db->prepare("DELETE FROM medecin WHERE id = ?")->execute([$mid]);
+            $db->commit();
+            $success = "Médecin supprimé.";
+        } catch (Exception $e) {
+            $db->rollBack();
+            $error = "Impossible de supprimer ce médecin : " . $e->getMessage();
+        }
     }
 }
 
@@ -26,7 +37,12 @@ $doctors = $db->query("SELECT m.*, s.nomspecialite FROM medecin m LEFT JOIN spec
 <div class="fade-in space-y-8">
     <?php if (isset($success)): ?>
         <div class="p-4 bg-emerald-50 text-emerald-700 rounded-2xl border border-emerald-100 flex items-center gap-3">
-            <i class="fas fa-check-circle"></i> <?= $success ?>
+            <i class="fas fa-check-circle"></i> <?= htmlspecialchars($success) ?>
+        </div>
+    <?php endif; ?>
+    <?php if (isset($error)): ?>
+        <div class="p-4 bg-red-50 text-red-700 rounded-2xl border border-red-100 flex items-center gap-3">
+            <i class="fas fa-exclamation-circle"></i> <?= htmlspecialchars($error) ?>
         </div>
     <?php endif; ?>
 

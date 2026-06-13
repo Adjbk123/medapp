@@ -5,7 +5,7 @@ $header_icon = "fas fa-prescription-bottle-alt";
 include_once '../components/doctor_layout_top.php';
 
 // Récupérer les patients
-$stmt = $db->prepare("SELECT id, nom, prenom FROM patient WHERE id_medecin = ? ORDER BY nom, prenom");
+$stmt = $db->prepare("SELECT DISTINCT p.id, p.nom, p.prenom FROM patient p JOIN rendezvous r ON p.id = r.idpatient WHERE r.idmedecin = ? ORDER BY p.nom, p.prenom");
 $stmt->execute([$user_id]);
 $patients = $stmt->fetchAll(PDO::FETCH_ASSOC);
 

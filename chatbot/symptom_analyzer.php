@@ -218,14 +218,20 @@ $symptomsDatabase = [
  * @param string $message Le message de l'utilisateur
  * @return array|null Les informations sur le symptôme détecté ou null
  */
+function normalizeText($text) {
+    $text = mb_strtolower($text, 'UTF-8');
+    // Remplacer les accents par leur équivalent sans accent
+    $from = ['à','â','ä','é','è','ê','ë','î','ï','ô','ö','ù','û','ü','ÿ','ç','œ','æ'];
+    $to   = ['a','a','a','e','e','e','e','i','i','o','o','u','u','u','y','c','oe','ae'];
+    $text = str_replace($from, $to, $text);
+    // Supprimer les caractères non alphanumériques (sauf espaces)
+    return (string) preg_replace('/[^a-z0-9\s]/', ' ', $text);
+}
+
 function analyzeSymptoms($message) {
     global $symptomsDatabase;
-    
-    // Convertir le message en minuscules pour ne pas être sensible à la casse
-    $message = strtolower($message);
-    
-    // Normaliser le texte (enlever les caractères spéciaux, les apostrophes, etc.)
-    $message = preg_replace('/[^a-z0-9\s]/', ' ', $message);
+
+    $message = normalizeText($message);
     
     // Liste des mots-clés essentiels à détecter dans le message
     $keywordMap = [
@@ -269,7 +275,7 @@ function analyzeSymptoms($message) {
     // Rechercher directement les symptômes dans le message
     foreach ($symptomsDatabase as $symptom => $data) {
         // Normaliser le symptôme pour la comparaison
-        $normalizedSymptom = strtolower(preg_replace('/[^a-z0-9\s]/', ' ', $symptom));
+        $normalizedSymptom = normalizeText($symptom);
         
         if (strpos($message, $normalizedSymptom) !== false) {
             $detectedKeywords[$symptom] = true;
@@ -321,11 +327,11 @@ function analyzeResponses($symptomData, $userResponses) {
     
     // Analyser chaque réponse pour les mots-clés associés aux conditions
     foreach ($userResponses as $response) {
-        $response = strtolower($response);
-        
+        $response = normalizeText($response);
+
         foreach ($conditions as $condition => $keywords) {
             foreach ($keywords as $keyword) {
-                if (strpos($response, strtolower($keyword)) !== false) {
+                if (strpos($response, normalizeText($keyword)) !== false) {
                     $scores[$condition]++;
                 }
             }

@@ -6,8 +6,8 @@ include_once '../components/doctor_layout_top.php';
 
 $patient_id_url = isset($_GET['patient_id']) ? (int)$_GET['patient_id'] : null;
 
-// Récupérer les patients
-$stmt = $db->prepare("SELECT id, nom, prenom FROM patient WHERE id_medecin = ? ORDER BY nom, prenom");
+// Récupérer les patients rattachés au médecin ou tous les patients vérifiés
+$stmt = $db->prepare("SELECT id, nom, prenom FROM patient WHERE id_medecin = ? OR verification_status = 'verified' ORDER BY nom, prenom");
 $stmt->execute([$user_id]);
 $patients = $stmt->fetchAll(PDO::FETCH_ASSOC);
 

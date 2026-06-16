@@ -20,6 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'], $_POST['pat
             $db->prepare("DELETE FROM rendezvous WHERE idpatient = ?")->execute([$pid]);
             $db->prepare("DELETE FROM consultation WHERE id_patient = ?")->execute([$pid]);
             $db->prepare("DELETE FROM ordonnance WHERE idpatient = ?")->execute([$pid]);
+            $db->prepare("DELETE FROM profilpatient WHERE idpatient = ?")->execute([$pid]);
             $db->prepare("DELETE FROM carnetsante WHERE id_patient = ?")->execute([$pid]);
             $db->prepare("DELETE FROM dossiers_medicaux WHERE id_patient = ?")->execute([$pid]);
             $db->prepare("DELETE FROM patient WHERE id = ?")->execute([$pid]);

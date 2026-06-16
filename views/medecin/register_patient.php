@@ -31,8 +31,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Créer le compte patient (mot de passe temporaire)
         $temp_password = password_hash(bin2hex(random_bytes(8)), PASSWORD_DEFAULT);
 
-        $stmt = $db->prepare("INSERT INTO patient (nom, prenom, datenais, sexe, email, contact, adresse, password, role, id_medecin, verification_status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'patient', ?, 'verified', NOW())");
-        $stmt->execute([$nom, $prenom, $datenais, $sexe, $email, $contact, $adresse, $temp_password, $user_id]);
+        $stmt = $db->prepare("INSERT INTO patient (nom, prenom, datenais, sexe, email, contact, password, role, id_medecin, verification_status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, 'patient', ?, 'verified', NOW())");
+        $stmt->execute([$nom, $prenom, $datenais, $sexe, $email, $contact, $temp_password, $user_id]);
+
+        $patient_id = $db->lastInsertId();
+
+        if ($adresse) {
+            $stmt2 = $db->prepare("INSERT INTO profilpatient (idpatient, adresse, profession) VALUES (?, ?, '') ON DUPLICATE KEY UPDATE adresse = VALUES(adresse)");
+            $stmt2->execute([$patient_id, $adresse]);
+        }
 
         $success = "Patient $prenom $nom ajouté avec succès.";
     } catch (Exception $e) {

@@ -36,11 +36,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $db->commit();
         $success = "Profil mis à jour.";
         // Refresh data
-        $stmt->execute([$user_id]);
-        $medecin = $stmt->fetch(PDO::FETCH_ASSOC);
+        $refresh = $db->prepare("SELECT m.*, pm.adresse, pm.profession, pm.imgdiplome, pm.disponibilite, s.nomspecialite FROM medecin m LEFT JOIN profilmedecin pm ON m.id = pm.idmedecin LEFT JOIN specialite s ON m.idspecialite = s.id WHERE m.id = ?");
+        $refresh->execute([$user_id]);
+        $medecin = $refresh->fetch(PDO::FETCH_ASSOC);
     } catch (Exception $e) {
-        $db->rollBack();
-        $error = "Erreur lors de la mise à jour.";
+        if ($db->inTransaction()) $db->rollBack();
+        $error = "Erreur lors de la mise à jour : " . $e->getMessage();
     }
 }
 ?>
